@@ -66,5 +66,6 @@ async def render_cards_template(request: Request, orderId: str = Form(None)):
         },
     )
 
-
-
+@router.get("/", response_class=HTMLResponse)
+async def dashboard(request: Request):
+    return templates.TemplateResponse("dashboard.html", {"request": request})

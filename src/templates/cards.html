@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DataFrame Display</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="/static/cards.js" defer></script>
+  </head>
+  <body>
+    <div class="container">
+      <h1>{{name}} Display</h1>
+      {% for tag in colHeads %}
+      <span class="badge badge-secondary">{{ tag }}</span>
+      {% endfor %}
+      <div class="row">
+        {% for index, row in df.iterrows() %}
+        <div class="col-lg-4 col-md-6 col-sm-12">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="card-title">{{ row[heading] }}</h5>
+            </div>
+            <div class="card-body">
+              <ul class="list-group list-group-flush">
+                {% for col, val in row.items() %} {% if col != heading %}
+                <li
+                  class="list-group-item{% if col == priceHeader %}-primary{% endif %}"
+                >
+                  {{ col }}: <br />
+                  {{ val }}
+                </li>
+                {% endif %} {% endfor %}
+              </ul>
+              <!-- Button added inside card body -->
+              <form>
+                <!-- Add hidden input fields for additional data -->
+                <input
+                  type="hidden"
+                  name="orderId"
+                  value="{{ row['orderId'] }}"
+                />
+                <button type="submit" class="btn btn-primary">
+                  Call Server
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </body>
+</html>

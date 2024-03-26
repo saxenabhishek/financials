@@ -1,5 +1,5 @@
 from src.utils import get_logger, read_json_files_from_folder
-from src.mappers.zomato.order_parser import OrderParser
+from src.vendors.zomato.order_parser import OrderParser
 import pandas as pd
 from datetime import timedelta
 
@@ -12,7 +12,6 @@ class MapZomatoData:
 
     def __init__(self):
         log.info("reading zomato order data...")
-
         self.read_order_data()
 
         log.info("Reading icic transactions data...")
@@ -33,7 +32,7 @@ class MapZomatoData:
 
     def read_icici_data(self):
         df = pd.read_csv("icici_data.csv")
-        df["Value Date"] = pd.to_datetime(df["Value Date"]).dt.date
+        df["ValueDate"] = pd.to_datetime(df["ValueDate"]).dt.date
 
         phrase = "zomato"  # replace 'your_phrase' with the phrase you are looking for
         subset = df[df["Narration"].str.contains(phrase, case=False)]
@@ -42,12 +41,12 @@ class MapZomatoData:
 
     def doMapping(self, time_window=timedelta(hours=12)):
 
-        self.icici_data.sort_values(by="Value Date", inplace=True)
+        self.icici_data.sort_values(by="ValueDate", inplace=True)
         joined_df = pd.merge(
             self.icici_data,
             self.orders_df,
             how="outer",
-            left_on=["Withdrawal Amount (INR )", "Value Date"],
+            left_on=["WithdrawalAmt", "ValueDate"],
             right_on=["totalCost", "date"],
         )
 

@@ -1,4 +1,4 @@
-from src.utils import read_json_file, get_all_file_paths, get_logger
+from src.utils import get_logger, read_json_files_from_folder
 from src.mappers.zomato.order_parser import OrderParser
 import pandas as pd
 from datetime import timedelta
@@ -8,9 +8,10 @@ log = get_logger(__name__)
 
 
 class MapZomatoData:
+    folder_path = "zomato_orders"
+
     def __init__(self):
         log.info("reading zomato order data...")
-        self.folder_path = "zomato_orders"
 
         self.read_order_data()
 
@@ -18,12 +19,7 @@ class MapZomatoData:
         self.icici_data = self.read_icici_data()
 
     def read_order_data(self):
-        order_parser = OrderParser(
-            [
-                read_json_file(file_path)
-                for file_path in get_all_file_paths(self.folder_path)
-            ]
-        )
+        order_parser = OrderParser(read_json_files_from_folder(self.folder_path))
 
         self.orders_df, self.dishes_df = order_parser.create_dataframe()
         self.orders_df = self.orders_df[self.orders_df["paymentStatus"] == 1]

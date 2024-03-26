@@ -1,5 +1,5 @@
 from src.mappers.zepto.order_parser import OrderParser
-from src.utils import read_json_file, get_all_file_paths, get_logger
+from src.utils import read_json_files_from_folder, get_logger
 import pandas as pd
 from datetime import timedelta
 
@@ -7,22 +7,18 @@ log = get_logger(__name__)
 
 
 class MapZeptoData:
+    folder_path = "zepto_orders"
+
     def __init__(self):
         log.info("reading zepto order data...")
 
-        self.folder_path = "zepto_orders"
         self._read_order_data()
 
         log.info("Reading icic transactions data...")
         self._read_icici_data()
 
     def _read_order_data(self):
-        order_parser = OrderParser(
-            [
-                read_json_file(file_path)
-                for file_path in get_all_file_paths(self.folder_path)
-            ]
-        )
+        order_parser = OrderParser(read_json_files_from_folder(self.folder_path))
 
         self.orders_df, self.items_df = order_parser.create_dataframe()
 

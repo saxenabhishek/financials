@@ -5,17 +5,23 @@ import colorlog
 import pandas as pd
 
 
+def read_json_files_from_folder(folder_path: str) -> list[dict]:
+    return [
+        read_json_file(file_path)
+        for file_path in get_all_file_paths(folder_path)
+        if file_path.endswith(".json")
+    ]
+
+
 def read_json_file(file_path):
     try:
         with open(file_path, "r") as file:
             data = json.load(file)
         return data
     except FileNotFoundError:
-        print(f"Error: File '{file_path}' not found.")
-        return None
+        raise FileNotFoundError(f"File '{file_path}' not found.")
     except json.JSONDecodeError as e:
-        print(f"Error decoding JSON: {e}")
-        return None
+        raise ValueError(f"{file_path} is not a json: {e}")
 
 
 def get_all_file_paths(folder_path: str) -> list[str]:
@@ -33,6 +39,8 @@ def get_all_file_paths(folder_path: str) -> list[str]:
         for file_name in files:
             file_path = os.path.join(root, file_name)
             file_paths.append(file_path)
+    if not file_paths:
+        raise FileNotFoundError(f"No files found in the directory: {folder_path}")
     return file_paths
 
 

@@ -10,7 +10,7 @@ class HdfcExcelDataReader:
         self.file_paths = file_paths
         self.file_path = self.file_paths[0]
 
-    def read_data(self, sheet_name=0):
+    def read_data(self, sheet_name=0) -> pd.DataFrame:
         """
         Read data from the specified sheet of the Excel file, starting from
         the row after the header row,
@@ -31,16 +31,11 @@ class HdfcExcelDataReader:
 
             if start_row is not None and end_row is not None:
                 df = self._extract_table_data(sheet_name, start_row, end_row)
-                df["Extracted Info"] = df["Narration"].apply(
-                    self.extract_narration_info
-                )
                 return df
             else:
-                print("Could not find start and/or end row of the table.")
-                return None
+                raise ValueError("Could not find start and/or end row of the table.")
         except Exception as e:
-            print(f"An error occurred while reading the Excel file: {e}")
-            return None
+            raise Exception(f"An error occurred while reading the Excel file: {e}")
 
     def extract_narration_info(self, narration):
         # Define patterns for different types of transactions
@@ -126,5 +121,20 @@ class HdfcExcelDataReader:
 
         # Remove rows with all null values or stars
         df = df.dropna(how="all")
+
+        df["ExtractedInfo"] = df["Narration"].apply(self.extract_narration_info)
+
+        df.rename(
+            columns={
+                "Date": "ValueDate",
+                "Narration": "Narration",
+                "Chq./Ref.No.": "RefNo",
+                "Value Dt": "TransactionDate",
+                "Withdrawal Amt.": "WithdrawalAmt",
+                "Deposit Amt.": "DepositAmt",
+                "Closing Balance": "ClosingBalance",
+            },
+            inplace=True,
+        )
 
         return df

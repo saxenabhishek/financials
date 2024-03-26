@@ -10,7 +10,7 @@ class IciciExcelDataReader:
         self.file_paths = file_paths
         self.file_path = self.file_paths[0]
 
-    def read_data(self, sheet_name=0):
+    def read_data(self, sheet_name=0) -> pd.DataFrame:
         """
         Read data from the specified sheet of the Excel file, starting from
         the row after the header row,
@@ -33,19 +33,14 @@ class IciciExcelDataReader:
 
             if start_row is not None and end_row is not None:
                 df = self._extract_table_data(sheet_name, start_row, end_row)
-                df["Extracted Info"] = df["Narration"].apply(
-                    self.extract_narration_info
-                )
                 return df
             else:
-                print("Could not find start and/or end row of the table.")
-                return None
+                raise ValueError("Could not find start and/or end row of the table.")
         except Exception as e:
-            print(f"An error occurred while reading the Excel file: {e}")
-            return None
+            raise Exception(f"An error occurred while reading the Excel file: {e}")
 
-    def extract_narration_info(self, narration):
-        # Define patterns for different types of transactions
+    def _extract_narration_info(self, narration):
+        # Define patterns for different types of transactions (and they may expand)
         patterns = {
             "UPI": r"UPI/(\d+)/(.*?)\/([^\/]+)@?\/([^\/]+)",
             "NEFT": r"NEFT-(.*?)-(.*?)-(.*)",
@@ -65,7 +60,7 @@ class IciciExcelDataReader:
                     extracted_info["bank_name"] = match.group(4)
                 elif key == "NEFT":
                     extracted_info["sender_bank"] = match.group(1)
-                    extracted_info["receiver"] = match.group(2)
+                    extracted_info["transaction_id"] = match.group(2)
                     extracted_info["details"] = match.group(3)
         if len(extracted_info) == 0:
             log.debug(f"No pattern matched for narration: {narration}")
@@ -87,11 +82,12 @@ class IciciExcelDataReader:
                 return index - 2
         return None
 
-    def _convert_to_datetime(self, df, columns, date_format):
+    def _convert_to_datetime(self, df, columns):
         """
         Convert specified columns to datetime format using the given date
         format.
         """
+        date_format = "%d/%m/%Y"
         for col in columns:
             df[col] = pd.to_datetime(df[col], format=date_format)
         return df
@@ -109,7 +105,7 @@ class IciciExcelDataReader:
         for index, row in df.iterrows():
             # Check if there are NaN values in the row
             if row.isnull().any():
-                df.at[index - 1, "Narration"] += row["Narration"]
+                df.at[index - 1, "Transaction Remarks"] += row["Transaction Remarks"]
 
         df.dropna(inplace=True)
 
@@ -124,15 +120,30 @@ class IciciExcelDataReader:
         )
 
         df = df.drop(df.columns[0], axis=1)
+
+        # these columns don't contain data
         df = df.drop(["S No.", "Cheque Number"], axis=1)
-        df.rename(columns={"Transaction Remarks": "Narration"}, inplace=True)
+
         df = self._concatenate_overflowing_rows(df)
 
-        date_format = "%d/%m/%Y"
-
         # Convert to relevant data types
-        df = self._convert_to_datetime(
-            df, ["Value Date", "Transaction Date"], date_format
+        df = self._convert_to_datetime(df, ["Value Date", "Transaction Date"])
+
+        df["ExtractedInfo"] = df["Transaction Remarks"].apply(
+            self._extract_narration_info
+        )
+        df["RefNo"] = df["ExtractedInfo"].apply(lambda x: x.get("transaction_id"))
+
+        df.rename(
+            columns={
+                "Value Date": "ValueDate",
+                "Transaction Date": "TransactionDate",
+                "Transaction Remarks": "Narration",
+                "Withdrawal Amount (INR )": "WithdrawalAmt",
+                "Deposit Amount (INR )": "DepositAmt",
+                "Balance (INR )": "ClosingBalance",
+            },
+            inplace=True,
         )
 
         # # Remove rows with all null values or stars

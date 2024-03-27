@@ -5,6 +5,7 @@ from src.utils import get_logger, give_table_context, get_all_file_paths
 from src.vendors.zomato.mapper import MapZomatoData
 from src.bank_parser.hdfc_parser import HdfcExcelDataReader
 from src.bank_parser.icici_parser import IciciExcelDataReader
+from src import db
 
 
 router = APIRouter()
@@ -69,15 +70,30 @@ async def render_cards_template(request: Request, orderId: str = Form(None)):
 
 @router.get("/ingest-data")
 async def ingest_data():
+    toCSV = True
     # specifically read all the files form bank data and ingest them into the database
     # db.transactions.insert_multiple({"word": "hello"} for _ in range(10))
     hdfc_parser = HdfcExcelDataReader(get_all_file_paths("bank_transactions/hdfc_data"))
     icici_parser = IciciExcelDataReader(
         get_all_file_paths("bank_transactions/icici_data")
     )
+
+    hdfc_df = hdfc_parser.read_data()
+    icici_df = icici_parser.read_data()
+
+    if toCSV:
+        hdfc_df.to_csv("hdfc_data.csv", index=False)
+        icici_df.to_csv("icici_data.csv", index=False)
+
+    db.transactions.truncate()
+
+    db.write_transactions([hdfc_df, icici_df])
+
+    # db.transactions.insert_multiple(hdfc_df.to_dict(orient="records"))
+    # db.transactions.insert_multiple(icici_df.to_dict(orient="records"))
     return dict(
-        hdfc=hdfc_parser.read_data().columns.tolist(),
-        icici=icici_parser.read_data().columns.tolist(),
+        hdfc=hdfc_df.columns.tolist(),
+        icici=icici_df.columns.tolist(),
     )
 
 

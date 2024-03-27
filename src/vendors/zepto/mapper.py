@@ -1,4 +1,4 @@
-from src.mappers.zepto.order_parser import OrderParser
+from src.vendors.zepto.order_parser import OrderParser
 from src.utils import read_json_files_from_folder, get_logger
 import pandas as pd
 from datetime import timedelta
@@ -33,13 +33,13 @@ class MapZeptoData:
 
     def _read_icici_data(self):
         df = pd.read_csv("icici_data.csv")
-        df["Value Date"] = pd.to_datetime(df["Value Date"]).dt.date
+        df["ValueDate"] = pd.to_datetime(df["ValueDate"]).dt.date
 
         phrase = "zepto"  # replace 'your_phrase' with the phrase you are looking for
         subset = df[df["Narration"].str.contains(phrase, case=False)]
 
         self.icici_data = subset.copy()
-        self.icici_data.sort_values(by="Value Date", inplace=True)
+        self.icici_data.sort_values(by="ValueDate", inplace=True)
 
     def doMapping(self, time_window=timedelta(hours=12)):
 

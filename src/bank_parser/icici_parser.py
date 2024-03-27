@@ -89,7 +89,9 @@ class IciciExcelDataReader:
         """
         date_format = "%d/%m/%Y"
         for col in columns:
-            df[col] = pd.to_datetime(df[col], format=date_format)
+            df[col] = pd.to_datetime(
+                df[col], format=date_format, errors="coerce"
+            ).dt.strftime("%Y-%m-%d")
         return df
 
     def _convert_to_numeric(self, df, columns, fill_value=0):

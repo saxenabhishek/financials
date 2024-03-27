@@ -82,13 +82,16 @@ class HdfcExcelDataReader:
                 return index - 2
         return None
 
-    def _convert_to_datetime(self, df, columns, date_format):
+    def _convert_to_datetime(self, df, columns):
+        date_format = "%d/%m/%y"
         """
         Convert specified columns to datetime format using the given date
         format.
         """
         for col in columns:
-            df[col] = pd.to_datetime(df[col], format=date_format, errors="coerce")
+            df[col] = pd.to_datetime(
+                df[col], format=date_format, errors="coerce"
+            ).dt.strftime("%Y-%m-%d")
         return df
 
     def _convert_to_numeric(self, df, columns, fill_value=0):
@@ -110,11 +113,9 @@ class HdfcExcelDataReader:
 
         df = df.drop(df.index[0])
 
-        date_format = "%d/%m/%y"
-
         # Convert to relevant data types
 
-        df = self._convert_to_datetime(df, ["Date", "Value Dt"], date_format)
+        df = self._convert_to_datetime(df, ["Date", "Value Dt"])
         df = self._convert_to_numeric(
             df, ["Withdrawal Amt.", "Deposit Amt.", "Closing Balance"]
         )

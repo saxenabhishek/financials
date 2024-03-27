@@ -1,11 +1,47 @@
 from tinydb import TinyDB
 from src.utils import get_logger
+from tinydb.operations import delete
+import pandas as pd
+from enum import Enum
+
+from src.vendors.zomato.mapper import MapZomatoData
+from src.vendors.zepto.mapper import MapZeptoData
 
 log = get_logger(__name__)
 
 
+class TransactionIndicator(Enum):
+    """
+    Enum representing the status of a transaction.
+
+    All transactions start with a status of 'Pending'. They can then either become 'Settled' or 'Needs Split'.
+    If a transaction is marked as 'Needs Split', it will eventually become 'Settled'.
+    """
+
+    SETTLED = "Settled"
+    NEEDS_SPLIT = "Needs Split"
+    PENDING = "Pending"
+
+    IN_PROCESS = "In Process"
+    UNKNOWN = "Unknown"
+
+
+class Category(Enum):
+    ESSENTIAL_NEED = "essential_need"  # Items crucial for survival and well-being
+    BASIC_NEED = "basic_need"  # Items necessary for a comfortable standard of living
+    WANT = "want"  # Items desired but not essential
+    INVESTMENT = (
+        "investment"  # Items that provide future benefit (financial or otherwise)
+    )
+    LUXURY = "luxury"  # Non-essential items that provide comfort or enjoyment
+    UNKNOWN = "unknown"  # Items that do not fit into any of the above categories
+
+
 class DatabaseHandler:
     _db_file = "master_db.json"
+    delete = delete
+    zepto_mapper = MapZeptoData()
+    zomato_mapper = MapZomatoData()
 
     def __init__(self):
         log.debug("Initializing the database handler")
@@ -25,3 +61,18 @@ class DatabaseHandler:
         """
         log.debug("Closing the database connection")
         self.db.close()
+
+    def write_transactions(self, transaction: list):
+        df = pd.concat(transaction)
+
+        df["TransactionIndicator"] = TransactionIndicator.PENDING.value
+        df["Category"] = Category.UNKNOWN.value
+
+        zomato_transactions, _ = self.zomato_mapper.doMapping()
+        # zepto_transactions, _ = self.zepto_mapper.doMapping()
+
+        df = df.merge(zomato_transactions[['RefNo', 'orderId']], on='RefNo', how='left')
+
+        df.rename(columns={'orderId': 'ZomatoOrderId'}, inplace=True)
+
+        self.transactions.insert_multiple(df.to_dict(orient="records"))

@@ -11,6 +11,7 @@ class MapZomatoData:
     folder_path = "zomato_orders"
 
     def __init__(self):
+        # take in df which will be used to map data here instead of reading from file
         log.info("reading zomato order data...")
         self.read_order_data()
 
@@ -34,7 +35,7 @@ class MapZomatoData:
         df = pd.read_csv("icici_data.csv")
         df["ValueDate"] = pd.to_datetime(df["ValueDate"]).dt.date
 
-        phrase = "zomato"  # replace 'your_phrase' with the phrase you are looking for
+        phrase = "zomato"
         subset = df[df["Narration"].str.contains(phrase, case=False)]
 
         return subset

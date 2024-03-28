@@ -16,7 +16,7 @@ class MapZomatoData:
         self.read_order_data()
 
         log.info("Reading icic transactions data...")
-        self.icici_data = self.read_icici_data()
+        self.read_icici_data()
 
     def read_order_data(self):
         order_parser = OrderParser(read_json_files_from_folder(self.folder_path))
@@ -24,7 +24,7 @@ class MapZomatoData:
         self.orders_df, self.dishes_df = order_parser.create_dataframe()
         self.orders_df = self.orders_df[self.orders_df["paymentStatus"] == 1]
         self.orders_df = self.orders_df.drop(
-            ["deliveryAddress", "restaurantRating", "paymentStatus", "status"], axis=1
+            ["restaurantRating", "paymentStatus", "status"], axis=1
         )
 
         self.orders_df.sort_values(by="orderDate", inplace=True)
@@ -37,11 +37,9 @@ class MapZomatoData:
 
         phrase = "zomato"
         subset = df[df["Narration"].str.contains(phrase, case=False)]
-
-        return subset
+        self.icici_data = subset
 
     def doMapping(self, time_window=timedelta(hours=12)):
-
         self.icici_data.sort_values(by="ValueDate", inplace=True)
         joined_df = pd.merge(
             self.icici_data,

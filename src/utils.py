@@ -3,6 +3,7 @@ import os
 import logging
 import colorlog
 import pandas as pd
+import re
 
 
 def read_json_files_from_folder(folder_path: str) -> list[dict]:
@@ -90,5 +91,10 @@ def get_logger(name):
 def give_table_context(df: pd.DataFrame) -> dict:
     return {
         "df": df,
-        "columns": df.columns.tolist(),
+        "columns": [convert_camel_to_title(col) for col in df.columns.tolist()],
     }
+
+
+def convert_camel_to_title(camel_str):
+    words = re.findall("[A-Z][^A-Z]*", camel_str)
+    return " ".join(word.title() for word in words)

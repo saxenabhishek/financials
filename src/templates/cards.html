@@ -29,9 +29,9 @@
               <ul class="list-group list-group-flush">
                 {% for col, val in row.items() %} {% if col != heading %}
                 <li
-                  class="list-group-item{% if col == priceHeader %}-primary{% endif %}"
+                  class="list-group-item {% if col == priceHeader %}active{% endif %}"
                 >
-                  {{ col }}: <br />
+                  <strong> {{ col | titleCase }}: </strong>
                   {{ val }}
                 </li>
                 {% endif %} {% endfor %}
@@ -44,7 +44,14 @@
                   name="orderId"
                   value="{{ row['orderId'] }}"
                 />
-                <button type="submit" class="btn btn-primary">
+                <div class="form-group">
+                  <label for="status">Transaction Status</label>
+                  <select class="form-control" id="status" name="status">
+                    <option value="settled">Settled</option>
+                    <option value="split">Needs Split</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">
                   Call Server
                 </button>
               </form>

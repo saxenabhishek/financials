@@ -1,4 +1,4 @@
-from tinydb import TinyDB
+from tinydb import TinyDB, Query
 from src.utils import get_logger
 from tinydb.operations import delete
 import pandas as pd
@@ -41,11 +41,16 @@ class DatabaseHandler:
     _db_file = "master_db.json"
     delete = delete
     zepto_mapper = MapZeptoData()
-    zomato_mapper = MapZomatoData()
+    Query = Query
 
     def __init__(self):
         log.debug("Initializing the database handler")
-        self.db = TinyDB(self._db_file)
+        self.db = TinyDB(
+            self._db_file,
+            indent=4,
+            separators=(",", ": "),
+            sort_keys=True,
+        )
         self._init_tables()
 
     def _init_tables(self):
@@ -68,11 +73,18 @@ class DatabaseHandler:
         df["TransactionIndicator"] = TransactionIndicator.PENDING.value
         df["Category"] = Category.UNKNOWN.value
 
-        zomato_transactions, _ = self.zomato_mapper.doMapping()
+        zomato_mapper = MapZomatoData(df)
+
+        zomato_transactions, _ = zomato_mapper.doMapping()
         # zepto_transactions, _ = self.zepto_mapper.doMapping()
 
-        df = df.merge(zomato_transactions[['RefNo', 'orderId']], on='RefNo', how='left')
-
-        df.rename(columns={'orderId': 'ZomatoOrderId'}, inplace=True)
+        df = df.merge(
+            zomato_transactions[["RefNo", "dictData"]], on="RefNo", how="left"
+        )
+        df.rename(columns={"dictData": "ZomatoDictData"}, inplace=True)
+        df["ValueDate"] = pd.to_datetime(df["ValueDate"]).dt.date.astype(str)
+        df["ZomatoDictData"].fillna("", inplace=True)
+        log.info(f"Writing {len(df)} transactions to the database")
+        log.info(f"First transaction: {df.iloc[0]}")
 
         self.transactions.insert_multiple(df.to_dict(orient="records"))

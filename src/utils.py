@@ -88,6 +88,7 @@ def get_logger(name):
     return logger
 
 
+# this is not required can repurpose this to filter dict and provide cols like that
 def give_table_context(df: pd.DataFrame) -> dict:
     return {
         "df": df,
@@ -96,5 +97,6 @@ def give_table_context(df: pd.DataFrame) -> dict:
 
 
 def convert_camel_to_title(camel_str):
-    words = re.findall("[A-Z][^A-Z]*", camel_str)
-    return " ".join(word.title() for word in words)
+    heading = re.sub(r"(?<!^)(?=[A-Z])", " ", camel_str)
+    heading = heading.title()
+    return heading

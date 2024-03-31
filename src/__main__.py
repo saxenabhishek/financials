@@ -9,10 +9,6 @@ app = FastAPI()
 log = get_logger(__name__)
 # Mount static files directory (optional)
 app.mount("/static", StaticFiles(directory="src/static"), name="static")
-
-# Initialize Jinja2 templates
-templates = Jinja2Templates(directory="src/templates")
-
 app.include_router(router)
 
 if __name__ == "__main__":

@@ -4,18 +4,92 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard</title>
-    <!-- Bootstrap CSS -->
-    <link
-      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <script src="/static/index.js" defer></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body>
-    <div class="container">
-      <h1>Welcome to the Dashboard</h1>
-      <!-- Button -->
-      <button type="button" class="btn btn-primary">Ingest Data</button>
+  <body class="bg-gray-100">
+    <div class="container mx-auto p-6">
+      <h1 class="text-3xl font-semibold text-gray-800 mb-6">
+        Welcome to the Dashboard
+      </h1>
+      <!-- Action Button -->
+      <button
+        type="button"
+        class="mb-6 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+      >
+        Ingest Data
+      </button>
+
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        <!-- Last Transaction In db -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <h2 class="text-xl font-semibold text-gray-800 mb-2">
+            Last Transaction In db
+          </h2>
+          <p class="text-3xl font-bold text-blue-500">263</p>
+        </div>
+
+        <!-- Number Of Pending Transactions -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <h2 class="text-xl font-semibold text-gray-800 mb-2">
+            Number Of Pending Transactions
+          </h2>
+          <p class="text-3xl font-bold text-yellow-500">42</p>
+        </div>
+
+        <!-- Transactions Waiting to be Split -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <h2 class="text-xl font-semibold text-gray-800 mb-2">
+            Transactions Waiting to be Split
+          </h2>
+          <p class="text-3xl font-bold text-red-500">12</p>
+        </div>
+
+        <!-- Total Settled Transactions -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <h2 class="text-xl font-semibold text-gray-800 mb-2">
+            Total Settled Transactions
+          </h2>
+          <p class="text-3xl font-bold text-purple-500">195</p>
+        </div>
+
+        <!-- Unread Transactions -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <h2 class="text-xl font-semibold text-gray-800 mb-2">
+            Unread Transactions
+          </h2>
+          <ul class="list-disc list-inside">
+            {% for transaction in unread_transactions %}
+            <li>{{ transaction }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <!-- L2 Vendor Metrics -->
+      <div class="mt-8">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">
+          Vendor Metrics
+        </h2>
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+        >
+          <!-- Vendor Cards -->
+          {% for vendor, metrics in vendor_metrics.items() %}
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-xl font-semibold text-gray-800 mb-2">
+              {{ vendor }}
+            </h3>
+            <ul>
+              {% for metric, value in metrics.items() %}
+              <li><strong>{{ metric }}:</strong> {{ value }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
     </div>
   </body>
 </html>

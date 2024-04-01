@@ -73,7 +73,13 @@
         </li>
         {% endfor %}
         <div class="col-auto">
-          <button class="btn btn-primary" onclick="markDone(this)">Done</button>
+          <button
+            class="btn btn-primary"
+            data-id="{{row['RefNo']}}"
+            onclick="markDone(this)"
+          >
+            Done
+          </button>
         </div>
       </ul>
       {% endfor %}
@@ -84,6 +90,10 @@
     <script>
       // JavaScript function to mark a row as done
       function markDone(button) {
+        const id = event.target.dataset.id;
+
+        console.log(id);
+
         var row = button.parentNode.parentNode;
         row.style.opacity = "0.5"; // Gray out the row
         var container = row.parentNode;

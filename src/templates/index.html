@@ -22,42 +22,19 @@
 
       <!-- KPI Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        <!-- Last Transaction In db -->
+        <!-- Loop through each KPI -->
+        {% for kpi in kpi_data %}
         <div class="bg-white p-6 rounded-lg shadow-md">
           <h2 class="text-xl font-semibold text-gray-800 mb-2">
-            Last Transaction In db
+            {{ kpi.name }}
           </h2>
-          <p class="text-3xl font-bold text-blue-500">263</p>
+          <p class="text-3xl font-bold text-{{ kpi.color }}">{{ kpi.value }}</p>
         </div>
-
-        <!-- Number Of Pending Transactions -->
+        {% endfor %}
+        <!-- Unread Transactions Files -->
         <div class="bg-white p-6 rounded-lg shadow-md">
           <h2 class="text-xl font-semibold text-gray-800 mb-2">
-            Number Of Pending Transactions
-          </h2>
-          <p class="text-3xl font-bold text-yellow-500">42</p>
-        </div>
-
-        <!-- Transactions Waiting to be Split -->
-        <div class="bg-white p-6 rounded-lg shadow-md">
-          <h2 class="text-xl font-semibold text-gray-800 mb-2">
-            Transactions Waiting to be Split
-          </h2>
-          <p class="text-3xl font-bold text-red-500">12</p>
-        </div>
-
-        <!-- Total Settled Transactions -->
-        <div class="bg-white p-6 rounded-lg shadow-md">
-          <h2 class="text-xl font-semibold text-gray-800 mb-2">
-            Total Settled Transactions
-          </h2>
-          <p class="text-3xl font-bold text-purple-500">195</p>
-        </div>
-
-        <!-- Unread Transactions -->
-        <div class="bg-white p-6 rounded-lg shadow-md">
-          <h2 class="text-xl font-semibold text-gray-800 mb-2">
-            Unread Transactions
+            Unread Transactions Files
           </h2>
           <ul class="list-disc list-inside">
             {% for transaction in unread_transactions %}

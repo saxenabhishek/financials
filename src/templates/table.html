@@ -12,7 +12,7 @@
     <table>
       <thead>
         <tr>
-          {% for column in columns %}
+          {% for column in df.columns.tolist()%}
           <th>{{ column }}</th>
           {% endfor %}
         </tr>

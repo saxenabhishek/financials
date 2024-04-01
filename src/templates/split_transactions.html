@@ -1,60 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Data Display</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
     <style>
-        /* CSS styles for the elements */
-        .container {
-            margin: 20px;
-        }
-        .data-row {
-            padding: 10px;
-            border: 1px solid #ccc;
-            margin-bottom: 10px;
-        }
-        .primary {
-            background-color: #f0f0f0;
-        }
-        .done {
-            background-color: #cfc;
-        }
-        .done button {
-            display: none; /* Hide the "Done" button for elements that are marked as done */
-        }
-        .all-done {
-            background-color: #9f9; /* Green box when all rows are done */
-            padding: 10px;
-            text-align: center;
-            font-weight: bold;
-        }
+      /* Additional CSS styles */
+      .primary {
+        background-color: #f0f0f0;
+      }
+      .done {
+        background-color: #cfc;
+        opacity: 0.5; /* Gray out the row */
+      }
+      .done button {
+        display: none;
+      }
+      .all-done {
+        background-color: #9f9;
+        padding: 10px;
+        text-align: center;
+        font-weight: bold;
+      }
+      body {
+        background-color: #f5f5f5; /* Light gray background */
+        color: #333; /* Blackish text */
+      }
+      .container {
+        color: #aa7e2b;
+        background-color: #fff; /* White background for container */
+        padding: 20px;
+        border-radius: 10px; /* Rounded corners */
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Shadow effect */
+        margin-top: 6rem;
+      }
+      .data-row {
+        margin-bottom: 10px;
+        background-color: #ffeac4; /* Orange background for data rows */
+        border-radius: 5px; /* Rounded corners */
+        padding: 10px;
+      }
+
+      .btn-primary {
+        background-color: #333; /* Black background for "Done" button */
+        border-color: #333; /* Black border for "Done" button */
+      }
+      .btn-primary:hover {
+        background-color: #000; /* Darker black on hover for "Done" button */
+        border-color: #000; /* Darker black border on hover for "Done" button */
+      }
+      .btn-primary:focus,
+      .btn-primary.focus {
+        box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.5); /* Slight shadow on focus for "Done" button */
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        {% for index, row in df.iterrows() %}
-            <div class="data-row {% if loop.first %}primary{% endif %}">
-                <p>{{ row }}</p>
-                <button onclick="markDone(this)">Done</button>
-            </div>
+      {% for index, row in df.iterrows() %}
+      <ul
+        class="list-group list-group-flush row data-row {% if loop.first %}primary{% endif %}"
+      >
+        {% for col, val in row.items() %}
+        <li class="list-group-item col">
+          <strong> {{ col | titleCase }}: </strong>
+          {{ val }}
+        </li>
         {% endfor %}
-        <div class="all-done" id="allDone" style="display: none;">All rows are done!</div>
+        <div class="col-auto">
+          <button class="btn btn-primary" onclick="markDone(this)">Done</button>
+        </div>
+      </ul>
+      {% endfor %}
     </div>
 
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // JavaScript function to mark a row as done
-        function markDone(button) {
-            var row = button.parentNode;
-            row.classList.remove('primary');
-            row.classList.add('done');
-            var nextRow = row.nextElementSibling;
-            if (nextRow) {
-                nextRow.classList.add('primary');
-            } else {
-                document.getElementById('allDone').style.display = 'block';
-            }
+      // JavaScript function to mark a row as done
+      function markDone(button) {
+        var row = button.parentNode.parentNode;
+        row.style.opacity = "0.5"; // Gray out the row
+        var container = row.parentNode;
+        container.appendChild(row); // Move row to the bottom
+        var nextRow = row.nextElementSibling;
+        if (nextRow) {
+          nextRow.classList.add("primary");
+        } else {
+          var firstRow = container.querySelector(".data-row");
+          firstRow.classList.add("primary");
         }
+      }
     </script>
-</body>
+  </body>
 </html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Display</title>
+    <style>
+        /* CSS styles for the elements */
+        .container {
+            margin: 20px;
+        }
+        .data-row {
+            padding: 10px;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+        .primary {
+            background-color: #f0f0f0;
+        }
+        .done {
+            background-color: #cfc;
+        }
+        .done button {
+            display: none; /* Hide the "Done" button for elements that are marked as done */
+        }
+        .all-done {
+            background-color: #9f9; /* Green box when all rows are done */
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% for index, row in df.iterrows() %}
+            <div class="data-row {% if loop.first %}primary{% endif %}">
+                <p>{{ row }}</p>
+                <button onclick="markDone(this)">Done</button>
+            </div>
+        {% endfor %}
+        <div class="all-done" id="allDone" style="display: none;">All rows are done!</div>
+    </div>
+
+    <script>
+        // JavaScript function to mark a row as done
+        function markDone(button) {
+            var row = button.parentNode;
+            row.classList.remove('primary');
+            row.classList.add('done');
+            var nextRow = row.nextElementSibling;
+            if (nextRow) {
+                nextRow.classList.add('primary');
+            } else {
+                document.getElementById('allDone').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

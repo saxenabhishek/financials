@@ -16,32 +16,52 @@
   </head>
   <body class="bg-gray-100">
     <div class="container mx-auto p-6">
-      <h1 class="text-3xl font-semibold text-gray-800 mb-6">
+      <h1 class="text-3xl text-gray-800 mb-6 font-semibold">
         Welcome to the Dashboard
       </h1>
       <!-- Action Button -->
       <button
         type="button"
-        class="mb-6 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        class="mb-6 bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded"
       >
         Ingest Data
       </button>
+
+      <!-- Ribbon Bar - Buttons for each month -->
+      <div class="flex items-center space-x-4 my-2">
+        <span class="text-gray-600">Select Time Period:</span>
+        <a
+          href="/"
+          class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+        >
+          All Data
+        </a>
+        {% for month in months %}
+        <a
+          href="/?month={{ loop.index }}"
+          class="bg-blue-500 hover:bg-blue-700 text-white font-normal py-2 px-4 rounded"
+        >
+          {{ month }}
+        </a>
+        {% endfor %}
+      </div>
 
       <!-- KPI Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         <!-- Loop through each KPI -->
         {% for kpi in kpi_data %}
         <div class="bg-white p-6 rounded-lg shadow-md">
-          <h2 class="text-xl font-semibold text-gray-800 mb-2">
-            {{ kpi.name }}
-          </h2>
+          <h2 class="text-xl font-light text-gray-800 mb-2">{{ kpi.name }}</h2>
           <p class="text-3xl font-bold text-{{ kpi.color }}">{{ kpi.value }}</p>
+          {% if kpi.subtext %}
+          <p class="text-sm text-gray-500">{{ kpi.subtext }}</p>
+          {% endif %}
         </div>
         {% endfor %}
         <!-- Unread Transactions Files -->
-        <div class="bg-white p-6 rounded-lg shadow-md">
-          <h2 class="text-xl font-semibold text-gray-800 mb-2">
-            Unread Transactions Files
+        <div class="bg-white p-6 rounded-lg shadow-md col-span-2">
+          <h2 class="text-xl font-light text-gray-800 mb-2">
+            Unread Transactions Files ({{ unread_transactions|length }})
           </h2>
           <ul class="list-disc list-inside">
             {% for transaction in unread_transactions %}
@@ -53,18 +73,14 @@
 
       <!-- L2 Vendor Metrics -->
       <div class="mt-8">
-        <h2 class="text-2xl font-semibold text-gray-800 mb-4">
-          Vendor Metrics
-        </h2>
+        <h2 class="text-2xl font-normal text-gray-800 mb-4">Vendor Metrics</h2>
         <div
           class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
         >
           <!-- Vendor Cards -->
           {% for vendor, metrics in vendor_metrics.items() %}
           <div class="bg-white p-6 rounded-lg shadow-md">
-            <h3 class="text-xl font-semibold text-gray-800 mb-2">
-              {{ vendor }}
-            </h3>
+            <h3 class="text-xl font-light text-gray-800 mb-2">{{ vendor }}</h3>
             <ul>
               {% for metric, value in metrics.items() %}
               <li><strong>{{ metric }}:</strong> {{ value }}</li>

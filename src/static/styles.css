@@ -1,5 +1,7 @@
 body {
-  font-family: Arial, sans-serif;
+  font-family: "Urbanist", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal; /* Apply the selected font to the whole page */
   margin: 0;
   padding: 10px;
   background-color: #f4f4f4;

@@ -11,6 +11,8 @@ from src.bank_parser.hdfc_parser import HdfcExcelDataReader
 from src.bank_parser.icici_parser import IciciExcelDataReader
 from src import db
 import pandas as pd
+import datetime
+from typing import Optional
 
 
 router = APIRouter()
@@ -33,17 +35,13 @@ async def call_server(orderId: str = Form(None)):
 
 
 # Define a route to render the template
-# @router.get("/table", response_class=HTMLResponse)
-# async def render_template(request: Request):
-#     global zomato_orders
-#     df = zomato_orders
-#     zomato_items = mapper.dishes_df
-#     # Specify the columns you want to display
-#     merged_df = df.merge(
-#         zomato_items, on="orderId", how="left", suffixes=("_orders", "_items")
-#     )
-#     context = dict(request=request, name="Zomato Data", **give_table_context(merged_df))
-#     return templates.TemplateResponse("table.html", context)
+@router.get("/table", response_class=HTMLResponse)
+async def render_template(request: Request):
+    zomato_transactions = db.transactions.search(db.Query().ZomatoDictData != "")
+    zomato_orders = pd.DataFrame(zomato_transactions)
+    context = dict(request=request, name="Zomato Data", df=zomato_orders)
+    # return templates.TemplateResponse("table.html", context)
+    return jinja_env.get_template("split_transactions.html").render(context)
 
 
 @router.get("/cards", response_class=HTMLResponse)
@@ -112,7 +110,142 @@ async def ingest_data():
 
 
 @router.get("/", response_class=HTMLResponse)
-async def dashboard(request: Request):
-    # give some stats about the master database and how many transaction are unmarked
-    # if there are unread files then show a message to the user
-    return jinja_env.get_template("index.html").render({"request": request})
+async def dashboard(request: Request, month: Optional[int] = None):
+    vendor_metrics = {
+        "Zomato": {
+            "Total Transactions": 145,
+            "Pending Transactions": 25,
+            "Settled Transactions": 120,
+        },
+        "Zepto": {
+            "Total Transactions": 78,
+            "Pending Transactions": 10,
+            "Settled Transactions": 68,
+        },
+        "Blinkit": {
+            "Total Transactions": 92,
+            "Pending Transactions": 15,
+            "Settled Transactions": 77,
+        },
+        "Blinkit1": {
+            "Total Transactions": 92,
+            "Pending Transactions": 15,
+            "Settled Transactions": 77,
+        },
+        "Blinkit2": {
+            "Total Transactions": 92,
+            "Pending Transactions": 15,
+            "Settled Transactions": 77,
+        },
+    }
+
+    unread_transactions = get_all_unread_transaction_files()
+
+    if month is not None:
+        start_date, end_date = get_start_and_end_for_month(month)
+    else:
+        start_date = end_date = None
+
+    transactions = db.transactions.all()
+    filtered_transactions = db.filter_transactions_by_date(
+        transactions, start_date, end_date
+    )
+    _, last_transaction_date_str = db.get_first_and_last_transaction_date(
+        filtered_transactions
+    )
+
+    kpi_data = [
+        {
+            "name": "Last Transaction Date",
+            "value": pipe_human_readable_date(last_transaction_date_str),
+            "color": "orange-500",
+            "subtext": f"{calculate_days_since_last_transaction(last_transaction_date_str)} days since update",
+        },
+        {
+            "name": "Number Of Pending Transactions",
+            "value": len(
+                db.filter_transactions_by_date(
+                    db.get_transaction_by_status(db.INDICATOR.PENDING),
+                    start_date,
+                    end_date,
+                )
+            ),
+            "color": "yellow-500",
+        },
+        {
+            "name": "Transactions Waiting to be Split",
+            "value": len(
+                db.filter_transactions_by_date(
+                    db.get_transaction_by_status(db.INDICATOR.NEEDS_SPLIT),
+                    start_date,
+                    end_date,
+                )
+            ),
+            "color": "red-500",
+        },
+        {
+            "name": "Total Settled Transactions",
+            "value": len(
+                db.filter_transactions_by_date(
+                    db.get_transaction_by_status(db.INDICATOR.SETTLED),
+                    start_date,
+                    end_date,
+                )
+            ),
+            "color": "purple-500",
+        },
+    ]
+
+    months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ]
+
+    months = months[: datetime.datetime.now().month]
+
+    context = dict(
+        request=request,
+        vendor_metrics=vendor_metrics,
+        unread_transactions=unread_transactions,
+        kpi_data=kpi_data,
+        months=months,
+    )
+    return jinja_env.get_template("index.html").render(context)
+
+
+def get_all_unread_transaction_files() -> list[str]:
+    return get_all_file_paths(r"bank_transactions\hdfc_data") + get_all_file_paths(
+        r"bank_transactions\icici_data"
+    )
+
+
+def calculate_days_since_last_transaction(last_transaction_str: str) -> int:
+    last_transaction_date = datetime.datetime.strptime(
+        last_transaction_str, "%Y-%m-%d"
+    ).date()
+    current_date = datetime.datetime.now().date()
+    return (current_date - last_transaction_date).days
+
+
+def pipe_human_readable_date(date_str: str) -> str:
+    date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+    return date.strftime("%B %d, %Y")
+
+
+def get_start_and_end_for_month(month: int) -> tuple[str, str]:
+    current_year = datetime.datetime.now().year
+    start_date = datetime.datetime(current_year, month, 1).strftime("%Y-%m-%d")
+    end_date = (
+        datetime.datetime(current_year, month + 1, 1) - datetime.timedelta(days=1)
+    ).strftime("%Y-%m-%d")
+    return start_date, end_date

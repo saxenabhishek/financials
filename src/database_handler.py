@@ -6,6 +6,9 @@ from enum import Enum
 
 from src.vendors.zomato.mapper import MapZomatoData
 from src.vendors.zepto.mapper import MapZeptoData
+from datetime import datetime
+from typing import Optional
+
 
 log = get_logger(__name__)
 
@@ -42,6 +45,7 @@ class DatabaseHandler:
     delete = delete
     zepto_mapper = MapZeptoData()
     Query = Query
+    INDICATOR = TransactionIndicator
 
     def __init__(self):
         log.debug("Initializing the database handler")
@@ -52,6 +56,37 @@ class DatabaseHandler:
             sort_keys=True,
         )
         self._init_tables()
+
+    def filter_transactions_by_date(
+        self, transactions, start: Optional[str] = None, end: Optional[str] = None
+    ):
+        if start:
+            start_date = datetime.strptime(start, "%Y-%m-%d")
+            transactions = [
+                txn
+                for txn in transactions
+                if datetime.strptime(txn["ValueDate"], "%Y-%m-%d") >= start_date
+            ]
+
+        if end:
+            end_date = datetime.strptime(end, "%Y-%m-%d")
+            transactions = [
+                txn
+                for txn in transactions
+                if datetime.strptime(txn["ValueDate"], "%Y-%m-%d") <= end_date
+            ]
+
+        return transactions
+
+    def get_first_and_last_transaction_date(self, transactions) -> tuple[str, str]:
+        # Find the first and last transaction dates
+        max_date_transaction = max(transactions, key=lambda x: x["ValueDate"])
+        min_date_transaction = min(transactions, key=lambda x: x["ValueDate"])
+
+        return (
+            min_date_transaction["ValueDate"],
+            max_date_transaction["ValueDate"],
+        )
 
     def _init_tables(self):
         """
@@ -88,3 +123,9 @@ class DatabaseHandler:
         log.info(f"First transaction: {df.iloc[0]}")
 
         self.transactions.insert_multiple(df.to_dict(orient="records"))
+
+    def get_transaction_by_status(self, status: TransactionIndicator):
+        transactions = self.transactions.search(
+            Query().TransactionIndicator == status.value
+        )
+        return transactions

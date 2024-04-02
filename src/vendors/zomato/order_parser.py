@@ -6,7 +6,7 @@ class OrderParser:
     def __init__(self, json_data_list):
         self.json_data_list = json_data_list
 
-    def extract_dishes(self, dish_string):
+    def _extract_dishes(self, dish_string):
         dishes = []
         # Split the dish string into individual items
         items = dish_string.split(", ")
@@ -23,7 +23,7 @@ class OrderParser:
             for dish_name, quantity in dishes
         ]
 
-    def parse_orders(self):
+    def _parse_orders(self):
         orders = []
         dishes = []
         for json_data in self.json_data_list:
@@ -41,13 +41,13 @@ class OrderParser:
                     "paymentStatus": order_info.get("paymentStatus", ""),
                     "dishString": order_info.get("dishString", ""),
                 }
-                for element in self.extract_dishes(order_info.get("dishString", "")):
+                for element in self._extract_dishes(order_info.get("dishString", "")):
                     dishes.append(dict(orderId=order_id, **element))
                 orders.append(order)
         return orders, dishes
 
     def create_dataframe(self):
-        orders_data, dishes_data = self.parse_orders()
+        orders_data, dishes_data = self._parse_orders()
         orders_df = pd.DataFrame(orders_data)
         dishes_df = pd.DataFrame(dishes_data)
 

@@ -1,7 +1,7 @@
 from src.utils import get_logger, read_json_files_from_folder
 from src.vendors.zomato.order_parser import OrderParser
 import pandas as pd
-from datetime import timedelta, datetime
+from datetime import datetime
 
 
 log = get_logger(__name__)
@@ -60,7 +60,7 @@ class MapZomatoData:
         ]
         self.icici_data = subset
 
-    def doMapping(self, time_window=timedelta(hours=12)):
+    def doMapping(self):
         self.icici_data.sort_values(by="ValueDate", inplace=True)
         joined_df = pd.merge(
             self.icici_data,

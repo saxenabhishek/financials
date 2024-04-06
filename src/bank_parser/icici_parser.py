@@ -59,8 +59,8 @@ class IciciExcelDataReader:
                     extracted_info["sender_receiver_details"] = match.group(3)
                     extracted_info["bank_name"] = match.group(4)
                 elif key == "NEFT":
-                    extracted_info["sender_bank"] = match.group(1)
-                    extracted_info["transaction_id"] = match.group(2)
+                    extracted_info["sender_bank"] = match.group(2)
+                    extracted_info["transaction_id"] = match.group(1)
                     extracted_info["details"] = match.group(3)
         if len(extracted_info) == 0:
             log.debug(f"No pattern matched for narration: {narration}")
@@ -89,9 +89,7 @@ class IciciExcelDataReader:
         """
         date_format = "%d/%m/%Y"
         for col in columns:
-            df[col] = pd.to_datetime(
-                df[col], format=date_format, errors="coerce"
-            ).dt.strftime("%Y-%m-%d")
+            df[col] = pd.to_datetime(df[col], format=date_format, errors="coerce")
         return df
 
     def _convert_to_numeric(self, df, columns, fill_value=0):
@@ -135,6 +133,8 @@ class IciciExcelDataReader:
             self._extract_narration_info
         )
         df["RefNo"] = df["ExtractedInfo"].apply(lambda x: x.get("transaction_id"))
+
+        df["Bank"] = "ICICI"
 
         df.rename(
             columns={

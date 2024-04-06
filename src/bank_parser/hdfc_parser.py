@@ -62,7 +62,6 @@ class HdfcExcelDataReader:
                 else:
                     extracted_info["type"] = key
                     extracted_info[key] = match.group(1)
-        log.info(f"Extracted info: {extracted_info}")
 
         return extracted_info
 
@@ -89,9 +88,7 @@ class HdfcExcelDataReader:
         format.
         """
         for col in columns:
-            df[col] = pd.to_datetime(
-                df[col], format=date_format, errors="coerce"
-            ).dt.strftime("%Y-%m-%d")
+            df[col] = pd.to_datetime(df[col], format=date_format, errors="coerce")
         return df
 
     def _convert_to_numeric(self, df, columns, fill_value=0):
@@ -124,6 +121,8 @@ class HdfcExcelDataReader:
         df = df.dropna(how="all")
 
         df["ExtractedInfo"] = df["Narration"].apply(self.extract_narration_info)
+
+        df["Bank"] = "HDFC"
 
         df.rename(
             columns={

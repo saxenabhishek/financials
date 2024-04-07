@@ -7,8 +7,11 @@ log = get_logger(__name__)
 
 class IciciExcelDataReader:
     def __init__(self, file_paths: list[str]):
-        self.file_paths = file_paths
-        self.file_path = self.file_paths[0]
+        if len(file_paths) == 0:
+            raise ValueError("No file paths provided.")
+        self.file_paths = [
+            file_path for file_path in file_paths if "old" not in file_path
+        ]
 
     def read_data(self, sheet_name=0) -> pd.DataFrame:
         """
@@ -25,17 +28,26 @@ class IciciExcelDataReader:
         rows containing stars.
         """
         try:
-            all_data = self._read_all_data(sheet_name)
-            start_row = self._find_start_row(all_data)
-            log.debug(f"Start row: {start_row}")
-            end_row = self._find_end_row(all_data, (start_row or 0) + 1)
-            log.debug(f"End row: {end_row}")
+            transaction_tables = []
+            for file_path in self.file_paths:
+                all_data = self._read_all_data(file_path)
+                start_row = self._find_start_row(all_data)
+                end_row = self._find_end_row(all_data, (start_row or 0) + 1)
 
-            if start_row is not None and end_row is not None:
-                df = self._extract_table_data(sheet_name, start_row, end_row)
-                return df
-            else:
-                raise ValueError("Could not find start and/or end row of the table.")
+                if start_row is not None and end_row is not None:
+                    log.debug(f"Start row: {start_row}")
+                    log.debug(f"End row: {end_row}")
+                    transaction_tables.append(
+                        self._extract_table_data(file_path, start_row, end_row)
+                    )
+                    log.debug(
+                        f"{len(transaction_tables[-1])} Transactions read from file: {file_path}"
+                    )
+                else:
+                    raise ValueError(
+                        "Could not find start and/or end row of the table."
+                    )
+            return self._combine_dataframes(transaction_tables)
         except Exception as e:
             raise Exception(f"An error occurred while reading the Excel file: {e}")
 
@@ -44,6 +56,7 @@ class IciciExcelDataReader:
         patterns = {
             "UPI": r"UPI/(\d+)/(.*?)\/([^\/]+)@?\/([^\/]+)",
             "NEFT": r"NEFT-(.*?)-(.*?)-(.*)",
+            "Interest": r"(\d+):Int\.Pd:(\d{2}-\d{2}-\d{4}) to (\d{2}-\d{2}-\d{4})"
         }
 
         extracted_info = {}
@@ -62,12 +75,16 @@ class IciciExcelDataReader:
                     extracted_info["sender_bank"] = match.group(2)
                     extracted_info["transaction_id"] = match.group(1)
                     extracted_info["details"] = match.group(3)
+                elif key == "Interest":
+                    extracted_info["transaction_id"] = match.group(1)
+                    extracted_info["start_date"] = match.group(2)
+                    extracted_info["end_date"] = match.group(3)
         if len(extracted_info) == 0:
             log.debug(f"No pattern matched for narration: {narration}")
         return extracted_info
 
-    def _read_all_data(self, sheet_name):
-        return pd.read_excel(self.file_path, sheet_name=sheet_name, header=None)
+    def _read_all_data(self, file_path, sheet_name=0):
+        return pd.read_excel(file_path, sheet_name=sheet_name, header=None)
 
     def _find_start_row(self, all_data):
         for index, row in all_data.iterrows():
@@ -111,15 +128,18 @@ class IciciExcelDataReader:
 
         return df
 
-    def _extract_table_data(self, sheet_name, start_row, end_row):
+    def _extract_table_data(self, file_path, start_row, end_row, sheet_name=0):
         df = pd.read_excel(
-            self.file_path,
+            file_path,
             sheet_name=sheet_name,
             skiprows=start_row,
             nrows=end_row - start_row,
         )
 
         df = df.drop(df.columns[0], axis=1)
+
+        # Remove rows with all null values or stars
+        df = df.dropna(how="all")
 
         # these columns don't contain data
         df = df.drop(["S No.", "Cheque Number"], axis=1)
@@ -129,14 +149,25 @@ class IciciExcelDataReader:
         # Convert to relevant data types
         df = self._convert_to_datetime(df, ["Value Date", "Transaction Date"])
 
-        df["ExtractedInfo"] = df["Transaction Remarks"].apply(
+        return df
+
+    def _combine_dataframes(self, dfs):
+        combined_df = pd.concat(dfs)
+        combined_df.reset_index(drop=True, inplace=True)
+        combined_df.drop_duplicates(inplace=True)
+
+        combined_df["ExtractedInfo"] = combined_df["Transaction Remarks"].apply(
             self._extract_narration_info
         )
-        df["RefNo"] = df["ExtractedInfo"].apply(lambda x: x.get("transaction_id"))
+        combined_df["_id"] = (
+            combined_df["ExtractedInfo"].apply(lambda x: x.get("transaction_id"))
+            + combined_df["Withdrawal Amount (INR )"].astype(str)
+            + combined_df["Deposit Amount (INR )"].astype(str)
+        )
 
-        df["Bank"] = "ICICI"
+        combined_df["Bank"] = "ICICI"
 
-        df.rename(
+        combined_df.rename(
             columns={
                 "Value Date": "ValueDate",
                 "Transaction Date": "TransactionDate",
@@ -148,7 +179,4 @@ class IciciExcelDataReader:
             inplace=True,
         )
 
-        # # Remove rows with all null values or stars
-        df = df.dropna(how="all")
-
-        return df
+        return combined_df

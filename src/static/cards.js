@@ -1,18 +1,26 @@
 function handleFormSubmit(event) {
   event.preventDefault(); // Prevent default form submission
 
-  const form = event.target; // The form that triggered the event
+  const form = event; // The form that triggered the event
+  const type = event.submitter.dataset.type; // The type of button that triggered the event
+
+  const formData = new FormData(form.target); // Create a new FormData object
+  formData.append("type", type); // Add the type to the form data
 
   // Process data based on the form and item ID
 
-  // Send data using AJAX (replace with your preferred library)
   fetch("/submit", {
     method: "POST",
-    body: new FormData(form),
+    body: formData,
   })
     .then((response) => response.json())
     .then((data) => {
       console.log("Success!", data);
+      var card = event.target.parentNode;
+      console.log(card.parentNode); // The form that triggered the event
+      card.style.opacity = "0.5"; // Gray out the row
+      var container = card.parentNode;
+      container.appendChild(card); // Move row to the bottom
     })
     .catch((error) => {
       console.error("Error:", error);

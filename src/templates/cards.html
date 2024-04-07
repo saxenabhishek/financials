@@ -3,60 +3,134 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DataFrame Display</title>
-    <!-- Bootstrap CSS -->
+    <title>{{name}}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/static/styles.css" />
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/styles.css" />
     <script src="/static/cards.js" defer></script>
   </head>
-  <body>
-    <div class="container">
-      <h1>{{name}} Display</h1>
-      {% for tag in colHeads %}
-      <span class="badge badge-secondary">{{ tag }}</span>
-      {% endfor %}
-      <div class="row">
-        {% for index, row in df.iterrows() %}
-        <div class="col-lg-4 col-md-6 col-sm-12">
-          <div class="card">
-            <div class="card-header">
-              <h5 class="card-title">{{ row[heading] }}</h5>
+  <body class="bg-gray-100">
+    <div class="container mx-auto px-4 relative">
+      <h1 class="text-3xl font-medium mt-2">{{name}}</h1>
+      <!-- Back Button -->
+      <button
+        onclick="location.href='/'"
+        class="mb-4 bg-gray-500 hover:bg-gray-700 text-white py-2 px-4 rounded absolute right-5 top-0"
+      >
+        Go Back
+      </button>
+      <!-- Ribbon Bar - Buttons for each month -->
+      <div class="flex items-center space-x-4 my-2 mx-2">
+        <span class="text-gray-600">Select Time Period:</span>
+        <a
+          href="?"
+          class="bg-gray-500 hover:bg-gray-700 text-white font-normal py-1 px-4 rounded"
+        >
+          All Data
+        </a>
+        {% for month in months %}
+        <a
+          href="?month={{ loop.index }}"
+          class="bg-blue-500 hover:bg-blue-700 text-white font-normal py-1 px-4 rounded {% if loop.index == selected_month %}bg-blue-700 ring{%endif%}"
+        >
+          {{ month }}
+        </a>
+        {% endfor %}
+      </div>
+      <!-- Info Tags bar -->
+      <div class="my-4 divide-x-2">
+        {% for tag in tags %}
+        <span
+          class="inline-block bg-gradient-to-r from-blue-300 to-blue-600 bg-clip-text text-transparent text-sm font-semibold px-2"
+          >{{ tag }}</span
+        >
+        {% endfor %}
+      </div>
+      <!-- Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {% for item in data %}
+        <div class="bg-white rounded-lg shadow-md p-4 col-span-1 mb-2 relative">
+          <h5 class="text-lg font-semibold mb-4 truncate">
+            {{ item[heading] }}
+          </h5>
+          <span
+            class="text-7xl opacity-15 text-blue-300 font-bold absolute top-5 right-0 mr-4"
+            >{{loop.index}}</span
+          >
+          {% if item[indicatorHeader] != "Settled" %}
+          <form class="mt-4">
+            <!-- Add hidden input fields for additional data -->
+            <input type="hidden" name="id" value="{{ item['_id'] }}" />
+            <div class="mb-4">
+              <label for="text_input" class="block text-gray-700">Notes:</label>
+              <input
+                type="text"
+                id="notes"
+                name="notes"
+                placeholder="Enter your notes here..."
+                value="{{ item['Notes'] }}"
+                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-indigo-500"
+              />
             </div>
-            <div class="card-body">
-              <ul class="list-group list-group-flush">
-                {% for col, val in row.items() %} {% if col != heading %}
-                <li
-                  class="list-group-item {% if col == priceHeader %}active{% endif %}"
-                >
-                  <strong> {{ col | titleCase }}: </strong>
-                  {{ val }}
+            <div class="text-right">
+              <button
+                data-type="Settled"
+                class="{{indicatorColors['Settled']}} font-bold py-2 px-4 rounded"
+              >
+                Settle
+              </button>
+              <button
+                data-type="Needs Split"
+                class="{{indicatorColors['Needs Split']}} font-bold py-2 px-4 rounded"
+              >
+                Split
+              </button>
+            </div>
+          </form>
+          {% endif %}
+          <ul>
+            {% for key, value in item.items() %} {% if key != heading %}
+            <li
+              class="{% if key == priceHeader %} text-blue-500 font-medium {% endif %} p-1"
+            >
+              <!-- Header -->
+              <span class="font-extralight text-blue-900"
+                >{{ key | titleCase }}:</span
+              >
+              <br />
+              <!-- Value Formatting -->
+              <!-- Currency -->
+              {% if 'Amt' in key or 'Balance' in key %} {{ value | currency }}
+              <!-- Indicator -->
+              {% elif indicatorHeader in key %}
+              <span
+                class="inline-block rounded-full px-3 py-1 text-sm font-semibold {{indicatorColors[value]}} mr-2"
+                >{{ value }}</span
+              >
+              <!-- Date -->
+              {% elif 'Date' in key %} {{ value | humanDate }}
+              <!-- Nested dict -->
+              {% elif value is mapping %}
+              <ul>
+                {% for sub_key, sub_value in value.items() %}
+                <li class="text-gray-500">
+                  &nbsp;{{ sub_key | titleCase }}: {{ sub_value }}
                 </li>
-                {% endif %} {% endfor %}
+                {% endfor %}
               </ul>
-              <!-- Button added inside card body -->
-              <form>
-                <!-- Add hidden input fields for additional data -->
-                <input
-                  type="hidden"
-                  name="orderId"
-                  value="{{ row['orderId'] }}"
-                />
-                <div class="form-group">
-                  <label for="status">Transaction Status</label>
-                  <select class="form-control" id="status" name="status">
-                    <option value="settled">Settled</option>
-                    <option value="split">Needs Split</option>
-                  </select>
-                </div>
-                <button type="submit" class="btn btn-primary mt-3">
-                  Call Server
-                </button>
-              </form>
-            </div>
-          </div>
+              <!-- Default -->
+              {% else %} {{ value }} {% endif %}
+            </li>
+            {% endif %} {% endfor %}
+          </ul>
         </div>
         {% endfor %}
       </div>

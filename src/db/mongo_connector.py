@@ -27,7 +27,7 @@ class MongoConnector:
     def get_database(self, database_name):
         return self.client[database_name]
 
-    def __del__(self):
+    def close_connection(self):
         """
         Closes the connection to the MongoDB database when the object is garbage collected.
         """

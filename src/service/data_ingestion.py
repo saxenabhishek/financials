@@ -8,6 +8,7 @@ import pandas as pd
 from src.service.const import TransactionIndicator, Category
 from src.db import mongo
 from src.vendors.zomato.mapper import MapZomatoData
+import os
 
 
 log = get_logger(__name__)
@@ -16,12 +17,10 @@ log = get_logger(__name__)
 class DataIngestionService:
     def __init__(self):
         log.info("Initializing Data Readers Objects")
-        self.hdfc_parser = HdfcExcelDataReader(
-            get_all_file_paths(r"bank_transactions\hdfc_data")
-        )
-        self.icici_parser = IciciExcelDataReader(
-            get_all_file_paths(r"bank_transactions\icici_data")
-        )
+        self.hdfc_files = get_all_file_paths(r"bank_transactions\hdfc_data")
+        self.icici_files = get_all_file_paths(r"bank_transactions\icici_data")
+        self.hdfc_parser = HdfcExcelDataReader(self.hdfc_files)
+        self.icici_parser = IciciExcelDataReader(self.icici_files)
 
     def ingest_data(self, toCSV=False) -> int:
         log.info("Ingesting data from HDFC and ICICI Excel files...")
@@ -38,19 +37,29 @@ class DataIngestionService:
         df["Category"] = Category.UNKNOWN.value
 
         # All transactions with zero withdrawal amount are considered settled
-        df.loc[df["WithdrawalAmt"] == 0, "TransactionIndicator"] = TransactionIndicator.SETTLED.value
+        df.loc[df["WithdrawalAmt"] == 0, "TransactionIndicator"] = (
+            TransactionIndicator.SETTLED.value
+        )
 
         transactions = mongo["transactions"]
 
         # Drop existing collection records for testing purposes
         transactions.drop()
 
-        # Convert DataFrame to dictionary records
         records = df.to_dict(orient="records")
 
         # Insert records into MongoDB collection
         log.info("Inserting records into MongoDB...")
-        return len(transactions.insert_many(records).inserted_ids)
+        try:
+            result = transactions.insert_many(records, ordered=False)
+        except Exception as e:
+            log.error(f"Error inserting records: {e}")
+
+        log.info("renaming processed files...")
+        for file in self.hdfc_files + self.icici_files:
+            os.rename(file, file + ".old")
+
+        return len(result.inserted_ids)
 
     def _map_transactions_to_vendors(self, df: pd.DataFrame) -> pd.DataFrame:
         # will figuire out later

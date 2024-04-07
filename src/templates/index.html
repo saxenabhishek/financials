@@ -20,27 +20,28 @@
         Welcome to the Dashboard
       </h1>
       <!-- Action Button -->
-      <a
-        type="button"
-        href="/ingest-data"
-        class="mb-6 bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded"
+      <!-- disabled="{{'false' if unread_transactions.length != 0 else 'true' }}" -->
+      <button
+        onclick="location.href='/ingest-data'"
+        {{ 'disabled' if unread_transactions|length == 0}}
+        class="mb-6 bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:hover:bg-orange-500"
       >
         Ingest Data
-      </a>
+      </button>
 
       <!-- Ribbon Bar - Buttons for each month -->
       <div class="flex items-center space-x-4 my-2">
         <span class="text-gray-600">Select Time Period:</span>
         <a
           href="/"
-          class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+          class="bg-gray-500 hover:bg-gray-700 text-white font-medium py-1 px-4 rounded"
         >
           All Data
         </a>
         {% for month in months %}
         <a
-          href="/?month={{ loop.index }}"
-          class="bg-blue-500 hover:bg-blue-700 text-white font-normal py-2 px-4 rounded"
+          href="?month={{ loop.index }}"
+          class="bg-blue-500 hover:bg-blue-700 text-white font-normal py-1 px-4 rounded {% if loop.index == selected_month %}bg-blue-700 ring{%endif%}"
         >
           {{ month }}
         </a>
@@ -51,13 +52,19 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         <!-- Loop through each KPI -->
         {% for kpi in kpi_data %}
-        <div class="bg-white p-6 rounded-lg shadow-md">
-          <h2 class="text-xl font-light text-gray-800 mb-2">{{ kpi.name }}</h2>
-          <p class="text-3xl font-bold text-{{ kpi.color }}">{{ kpi.value }}</p>
-          {% if kpi.subtext %}
-          <p class="text-sm text-gray-500">{{ kpi.subtext }}</p>
-          {% endif %}
-        </div>
+        <a href="{{kpi.link}}">
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-light text-gray-800 mb-2">
+              {{ kpi.name }}
+            </h2>
+            <p class="text-3xl font-bold text-{{ kpi.color }}">
+              {{ kpi.value }}
+            </p>
+            {% if kpi.subtext %}
+            <p class="text-sm text-gray-500">{{ kpi.subtext }}</p>
+            {% endif %}
+          </div>
+        </a>
         {% endfor %}
         <!-- Unread Transactions Files -->
         <div class="bg-white p-6 rounded-lg shadow-md col-span-2">

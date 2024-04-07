@@ -4,6 +4,7 @@ import logging
 import colorlog
 import pandas as pd
 import re
+import datetime
 
 
 def read_json_files_from_folder(folder_path: str) -> list[dict]:
@@ -100,3 +101,7 @@ def convert_camel_to_title(camel_str):
     heading = re.sub(r"(?<!^)(?=[A-Z])", " ", camel_str)
     heading = heading.title()
     return heading
+
+
+def pipe_human_readable_date(date: datetime.datetime) -> str:
+    return date.strftime("%B %d, %Y")

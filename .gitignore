@@ -162,7 +162,7 @@ cython_debug/
 *.csv
 *.json
 *.ipynb
-*.xls
+*.xls*
 scraper.py
 
 tailwind.config.js

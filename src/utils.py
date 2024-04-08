@@ -5,13 +5,14 @@ import colorlog
 import pandas as pd
 import re
 import datetime
+from typing import Optional
 
 
 def read_json_files_from_folder(folder_path: str) -> list[dict]:
     return [
         read_json_file(file_path)
         for file_path in get_all_file_paths(folder_path)
-        if file_path.endswith(".json")
+        if file_path.endswith(".json") and "old" not in file_path
     ]
 
 
@@ -26,7 +27,9 @@ def read_json_file(file_path):
         raise ValueError(f"{file_path} is not a json: {e}")
 
 
-def get_all_file_paths(folder_path: str) -> list[str]:
+def get_all_file_paths(
+    folder_path: str, must_contain: Optional[str] = None
+) -> list[str]:
     """
     Get all file paths from a folder and its subfolders.
 
@@ -40,6 +43,8 @@ def get_all_file_paths(folder_path: str) -> list[str]:
     for root, _, files in os.walk(folder_path):
         for file_name in files:
             file_path = os.path.join(root, file_name)
+            if must_contain and must_contain not in file_path:
+                continue
             file_paths.append(file_path)
     if not file_paths:
         raise FileNotFoundError(f"No files found in the directory: {folder_path}")

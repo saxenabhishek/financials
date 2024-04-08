@@ -13,6 +13,7 @@ from typing import Optional
 from src.service.data_ingestion import DataIngestionService
 from src.service.transactions import TransactionService, TransactionIndicator
 import time
+from functools import partial
 
 router = APIRouter()
 
@@ -55,8 +56,14 @@ async def render_cards_template(
         start_date = end_date = None
 
     view_cols = {"TransactionDate": 0, "ClosingBalance": 0, "Category": 0}
+
+    priceHeader = "WithdrawalAmt"
     if indicator is TransactionIndicator.PENDING:
         view_cols["DepositAmt"] = 0
+        priceHeader = "WithdrawalAmt"
+    elif indicator is TransactionIndicator.SETTLED:
+        view_cols["WithdrawalAmt"] = 0
+        priceHeader = "DepositAmt"
 
     transactions_data = list(
         txnSrv.get_all_transactions(
@@ -68,20 +75,25 @@ async def render_cards_template(
     )
 
     display_months = get_months()
+    month_link_gen = partial(generate_next_link, "/cards", indicator=indicator)
 
-    tags.append("Sorted by Value Date")
+    display_months = [
+        dict(link=month_link_gen(month=month["id"]), **month)
+        for month in display_months
+    ]
+
     tags.append(f"{len(transactions_data)} Txns")
     tags.append(f"{round((time.time_ns() - st)*1e-6, 3)}ms")
-    # if len(transactions_data) > 0:
-    #     tags += [column for column in transactions_data[0].keys()]
-    # else:
-    #     tags += ["No Data Found"]
+    tags.append("Sorted: Value Date")
+    tags.append(
+        f"Indicator: {indicator.value}" if indicator is not None else "All Txns"
+    )
 
     context = dict(
         request=request,
         heading="_id",
         name="Transaction Data",
-        priceHeader="WithdrawalAmt",
+        priceHeader=priceHeader,
         indicatorHeader="TransactionIndicator",
         indicatorColors=txnSrv.generate_tailwind_colors(),
         tags=tags,
@@ -136,6 +148,7 @@ async def dashboard(request: Request, month: Optional[int] = None):
     pending_transactions = txnSrv.get_pending_transactions(start_date, end_date)
     split_transactions = txnSrv.get_split_transactions(start_date, end_date)
     settled_transactions = txnSrv.get_settled_transactions(start_date, end_date)
+    kpi_link_gen = partial(generate_next_link, "/cards", month=month)
 
     kpi_data = [
         {
@@ -149,19 +162,19 @@ async def dashboard(request: Request, month: Optional[int] = None):
             "name": "Number Of Pending Transactions",
             "value": len(list(pending_transactions)),
             "color": "yellow-500",
-            "link": generate_next_link(TransactionIndicator.PENDING, month),
+            "link": kpi_link_gen(TransactionIndicator.PENDING),
         },
         {
             "name": "Transactions Waiting to be Split",
             "value": len(list(split_transactions)),
             "color": "red-500",
-            "link": generate_next_link(TransactionIndicator.NEEDS_SPLIT, month),
+            "link": kpi_link_gen(TransactionIndicator.NEEDS_SPLIT),
         },
         {
             "name": "Total Settled Transactions",
             "value": len(list(settled_transactions)),
             "color": "purple-500",
-            "link": generate_next_link(TransactionIndicator.SETTLED, month),
+            "link": kpi_link_gen(TransactionIndicator.SETTLED),
         },
     ]
 
@@ -177,8 +190,11 @@ async def dashboard(request: Request, month: Optional[int] = None):
 
 
 def get_all_unread_transaction_files() -> list[str]:
-    all_files = get_all_file_paths(r"bank_transactions\hdfc_data") + get_all_file_paths(
-        r"bank_transactions\icici_data"
+    zomato_files = get_all_file_paths("zomato_orders", ".json")
+    all_files = (
+        get_all_file_paths(r"bank_transactions\hdfc_data")
+        + get_all_file_paths(r"bank_transactions\icici_data")
+        + zomato_files
     )
     return [file for file in all_files if "old" not in file]
 
@@ -202,7 +218,7 @@ def get_start_and_end_for_month(
 
 
 def get_months():
-    months = [
+    months_list = [
         "January",
         "February",
         "March",
@@ -216,11 +232,18 @@ def get_months():
         "November",
         "December",
     ]
-    months = months[: datetime.datetime.now().month]
+    months_list = months_list[: datetime.datetime.now().month]
+    months = [{"id": i + 1, "name": month} for i, month in enumerate(months_list)]
     return months
 
 
-def generate_next_link(indicator: TransactionIndicator, month: Optional[int]):
+def generate_next_link(
+    route, indicator: Optional[TransactionIndicator], month: Optional[int]
+):
+    link = route + "?"
+    link_args = []
     if month is not None:
-        return f"/cards?indicator={indicator.value}&month={month}"
-    return f"/cards?indicator={indicator.value}"
+        link_args.append(f"month={month}")
+    if indicator is not None:
+        link_args.append(f"indicator={indicator.value}")
+    return link + "&".join(link_args)

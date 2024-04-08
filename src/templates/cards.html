@@ -38,10 +38,10 @@
         </a>
         {% for month in months %}
         <a
-          href="?month={{ loop.index }}"
+          href="{{ month.link }}"
           class="bg-blue-500 hover:bg-blue-700 text-white font-normal py-1 px-4 rounded {% if loop.index == selected_month %}bg-blue-700 ring{%endif%}"
         >
-          {{ month }}
+          {{ month.name }}
         </a>
         {% endfor %}
       </div>
@@ -49,7 +49,7 @@
       <div class="my-4 divide-x-2">
         {% for tag in tags %}
         <span
-          class="inline-block bg-gradient-to-r from-blue-300 to-blue-600 bg-clip-text text-transparent text-sm font-semibold px-2"
+          class="inline-block bg-gradient-to-r from-blue-300 to-blue-600 bg-clip-text text-transparent text-sm font-bold px-2"
           >{{ tag }}</span
         >
         {% endfor %}

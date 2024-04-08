@@ -3,8 +3,12 @@ import re
 
 
 class OrderParser:
-    def __init__(self, json_data_list):
+    invalid_init = False
+
+    def __init__(self, json_data_list: list[dict]):
         self.json_data_list = json_data_list
+        if len(self.json_data_list) == 0:
+            self.invalid_init = True
 
     def _extract_dishes(self, dish_string):
         dishes = []
@@ -16,20 +20,17 @@ class OrderParser:
             match = re.match(r"(\d+)\s*x\s*(.*)", item)
             if match:
                 quantity = int(match.group(1))
-                dish_name = match.group(2).strip()
-                dishes.append((dish_name, quantity))
-        return [
-            dict(dish_name=dish_name, quantity=quantity)
-            for dish_name, quantity in dishes
-        ]
+                name = match.group(2).strip()
+                dishes.append(dict(name=name, quantity=quantity))
+
+        return dishes
 
     def _parse_orders(self):
         orders = []
-        dishes = []
         for json_data in self.json_data_list:
             for order_id, order_info in json_data["entities"]["ORDER"].items():
                 order = {
-                    "orderId": order_info["orderId"],
+                    "_id": order_info["orderId"],
                     "totalCost": order_info["totalCost"],
                     "orderDate": order_info["orderDate"],
                     "status": order_info["status"],
@@ -38,30 +39,31 @@ class OrderParser:
                     "restaurantRating": order_info["resInfo"]["rating"][
                         "aggregate_rating"
                     ],
+                    "restaurantThumb": order_info["resInfo"]["thumb"],
                     "paymentStatus": order_info.get("paymentStatus", ""),
                     "dishString": order_info.get("dishString", ""),
                 }
-                for element in self._extract_dishes(order_info.get("dishString", "")):
-                    dishes.append(dict(orderId=order_id, **element))
                 orders.append(order)
-        return orders, dishes
+        return orders
 
-    def create_dataframe(self):
-        orders_data, dishes_data = self._parse_orders()
+    def read_data(self):
+        if self.invalid_init:
+            raise ValueError("No valid file paths were provided.")
+        orders_data = self._parse_orders()
         orders_df = pd.DataFrame(orders_data)
-        dishes_df = pd.DataFrame(dishes_data)
 
-        orders_df["orderId"] = orders_df["orderId"].astype(str)
-        dishes_df["orderId"] = dishes_df["orderId"].astype(str)
+        orders_df["_id"] = orders_df["_id"].astype(str)
+        orders_df["totalCost"] = pd.to_numeric(orders_df["totalCost"].str[1:])
 
         orders_df["orderDate"] = pd.to_datetime(
             orders_df["orderDate"], format="%B %d, %Y at %I:%M %p"
         )
-
-        orders_df["totalCost"] = pd.to_numeric(orders_df["totalCost"].str[1:])
+        orders_df["status"] = orders_df["status"].astype(int)
+        orders_df["paymentStatus"] = orders_df["paymentStatus"].astype(int)
 
         orders_df.drop_duplicates(inplace=True)
-        dishes_df.drop_duplicates(inplace=True)
 
-        orders_df = orders_df.sort_values(by="orderDate")
-        return orders_df, dishes_df
+        orders_df["dishes"] = orders_df["dishString"].apply(self._extract_dishes)
+
+        orders_df.sort_values(by="orderDate", inplace=True)
+        return orders_df

@@ -18,12 +18,15 @@ def generate_unique_id(row):
 
 
 class HdfcExcelDataReader:
+    invalid_init = False
+
     def __init__(self, file_paths: list[str]):
-        if len(file_paths) == 0:
-            raise ValueError("No file paths provided.")
         self.file_paths = [
             file_path for file_path in file_paths if "old" not in file_path
         ]
+
+        if len(self.file_paths) == 0:
+            self.invalid_init = True
 
     def read_data(self) -> pd.DataFrame:
         """
@@ -39,6 +42,8 @@ class HdfcExcelDataReader:
         - DataFrame containing the data from the specified sheet, delimited by
         rows containing stars.
         """
+        if self.invalid_init:
+            raise ValueError("No valid file paths were provided.")
         try:
             transaction_tables = []
             for file_path in self.file_paths:
@@ -64,7 +69,7 @@ class HdfcExcelDataReader:
         except Exception as e:
             raise Exception(f"An error occurred while reading the Excel file: {e}")
 
-    def extract_narration_info(self, narration):
+    def _extract_narration_info(self, narration):
         # Define patterns for different types of transactions
         patterns = {
             "UPI": r"UPI-(.*?)-(.*)-(.*?)-(.*)",
@@ -108,11 +113,11 @@ class HdfcExcelDataReader:
         return None
 
     def _convert_to_datetime(self, df, columns):
-        date_format = "%d/%m/%y"
         """
         Convert specified columns to datetime format using the given date
         format.
         """
+        date_format = "%d/%m/%y"
         for col in columns:
             df[col] = pd.to_datetime(df[col], format=date_format, errors="coerce")
         return df
@@ -165,7 +170,7 @@ class HdfcExcelDataReader:
         combined_df.drop("Chq./Ref.No.", axis=1, inplace=True)
 
         combined_df["ExtractedInfo"] = combined_df["Narration"].apply(
-            self.extract_narration_info
+            self._extract_narration_info
         )
 
         combined_df["Bank"] = "HDFC"

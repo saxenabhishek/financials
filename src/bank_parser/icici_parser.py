@@ -6,12 +6,15 @@ log = get_logger(__name__)
 
 
 class IciciExcelDataReader:
+    invalid_init = False
+
     def __init__(self, file_paths: list[str]):
-        if len(file_paths) == 0:
-            raise ValueError("No file paths provided.")
         self.file_paths = [
             file_path for file_path in file_paths if "old" not in file_path
         ]
+
+        if len(self.file_paths) == 0:
+            self.invalid_init = True
 
     def read_data(self, sheet_name=0) -> pd.DataFrame:
         """
@@ -27,6 +30,8 @@ class IciciExcelDataReader:
         - DataFrame containing the data from the specified sheet, delimited by
         rows containing stars.
         """
+        if self.invalid_init:
+            raise ValueError("No valid file paths were provided.")
         try:
             transaction_tables = []
             for file_path in self.file_paths:
@@ -56,7 +61,7 @@ class IciciExcelDataReader:
         patterns = {
             "UPI": r"UPI/(\d+)/(.*?)\/([^\/]+)@?\/([^\/]+)",
             "NEFT": r"NEFT-(.*?)-(.*?)-(.*)",
-            "Interest": r"(\d+):Int\.Pd:(\d{2}-\d{2}-\d{4}) to (\d{2}-\d{2}-\d{4})"
+            "Interest": r"(\d+):Int\.Pd:(\d{2}-\d{2}-\d{4}) to (\d{2}-\d{2}-\d{4})",
         }
 
         extracted_info = {}

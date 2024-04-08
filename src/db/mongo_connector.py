@@ -35,6 +35,4 @@ class MongoConnector:
             self.client.close()
 
 
-# Example usage
-mongo_connector = MongoConnector()
-database = mongo_connector.get_database("my_database")
+

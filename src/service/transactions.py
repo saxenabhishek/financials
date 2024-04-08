@@ -2,7 +2,6 @@ from src.db import mongo
 from datetime import datetime
 from typing import Optional
 from src.service.const import TransactionIndicator
-from bson import ObjectId
 
 
 class TransactionService:
@@ -82,7 +81,7 @@ class TransactionService:
         set = {"Notes": notes, "TransactionIndicator": type.value}
         if notes is None:
             set.pop("Notes")
-        return self.db.update_one({"_id": ObjectId(id)}, {"$set": set})
+        return self.db.update_one({"_id": id}, {"$set": set})
 
     @staticmethod
     def generate_tailwind_colors():

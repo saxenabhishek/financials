@@ -43,7 +43,7 @@
           href="?month={{ loop.index }}"
           class="bg-blue-500 hover:bg-blue-700 text-white font-normal py-1 px-4 rounded {% if loop.index == selected_month %}bg-blue-700 ring{%endif%}"
         >
-          {{ month }}
+          {{ month.name }}
         </a>
         {% endfor %}
       </div>
@@ -52,8 +52,7 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         <!-- Loop through each KPI -->
         {% for kpi in kpi_data %}
-        <a href="{{kpi.link}}">
-          <div class="bg-white p-6 rounded-lg shadow-md">
+        <a href="{{kpi.link}}" class="bg-white p-6 rounded-lg shadow-md">
             <h2 class="text-xl font-light text-gray-800 mb-2">
               {{ kpi.name }}
             </h2>
@@ -63,7 +62,6 @@
             {% if kpi.subtext %}
             <p class="text-sm text-gray-500">{{ kpi.subtext }}</p>
             {% endif %}
-          </div>
         </a>
         {% endfor %}
         <!-- Unread Transactions Files -->

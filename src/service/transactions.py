@@ -11,7 +11,7 @@ class TransactionService:
     def get_last_transaction_date(
         self, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None
     ) -> datetime:
-        query = self._get_query_from_date_range(start_date, end_date)
+        query = self._add_query_range(start_date, end_date)
 
         last_transaction = self.db.find_one(query, sort=[("ValueDate", -1)])
         if last_transaction:
@@ -25,7 +25,7 @@ class TransactionService:
         end_date: Optional[datetime] = None,
         indicator: Optional[TransactionIndicator] = None,
     ):
-        query = self._get_query_from_date_range(start_date, end_date)
+        query = self._add_query_range(start_date, end_date)
         if indicator:
             query = self._add_indicator_to_query(query, indicator)
         return self.db.find(query, cols) if cols else self.db.find(query)
@@ -51,7 +51,7 @@ class TransactionService:
             TransactionIndicator.SETTLED, start_date, end_date
         )
 
-    def _get_query_from_date_range(
+    def _add_query_range(
         self, start_date: Optional[datetime], end_date: Optional[datetime]
     ) -> dict:
         query = {}
@@ -69,7 +69,7 @@ class TransactionService:
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
     ):
-        query: dict = self._get_query_from_date_range(start_date, end_date)
+        query: dict = self._add_query_range(start_date, end_date)
         query = self._add_indicator_to_query(query, indicator)
         return self.db.find(query, {"_id": 0})
 

@@ -11,7 +11,8 @@ class TransactionService:
     def get_last_transaction_date(
         self, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None
     ) -> datetime:
-        query = self._add_query_range(start_date, end_date)
+        query = {}
+        query = self._add_query_range(query, start_date, end_date)
 
         last_transaction = self.db.find_one(query, sort=[("ValueDate", -1)])
         if last_transaction:
@@ -24,11 +25,49 @@ class TransactionService:
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         indicator: Optional[TransactionIndicator] = None,
+        phrase: Optional[str] = None,
+        combine_with_vendor_data: bool = False,
     ):
-        query = self._add_query_range(start_date, end_date)
+        if combine_with_vendor_data and phrase:
+            return self.get_all_vendor_transactions(
+                cols, start_date, end_date, indicator, phrase
+            )
+        query: dict = {}
+        query = self._add_query_range(query, start_date, end_date)
         if indicator:
             query = self._add_indicator_to_query(query, indicator)
+        if phrase:
+            query = self._add_phrase_to_query(query, phrase)
         return self.db.find(query, cols) if cols else self.db.find(query)
+
+    def get_all_vendor_transactions(
+        self,
+        cols: Optional[dict] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        indicator: Optional[TransactionIndicator] = None,
+        phrase: Optional[str] = None,
+    ):
+        match_query_args = [{phrase: {"$exists": True}}]
+        match_query_args.append(self._add_query_range({}, start_date, end_date))
+        if indicator:
+            match_query_args.append(self._add_indicator_to_query({}, indicator))
+        print(match_query_args)
+        return self.db.aggregate(
+            [
+                {"$match": {"$and": match_query_args}},
+                {"$project": cols},
+                {
+                    "$lookup": {
+                        "from": phrase,
+                        "localField": phrase,
+                        "foreignField": "_id",
+                        "as": "special",
+                    }
+                },
+                {"$unwind": {"path": "$special"}},
+            ]
+        )
 
     def get_pending_transactions(
         self, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None
@@ -52,15 +91,14 @@ class TransactionService:
         )
 
     def _add_query_range(
-        self, start_date: Optional[datetime], end_date: Optional[datetime]
+        self, query, start_date: Optional[datetime], end_date: Optional[datetime]
     ) -> dict:
-        query = {}
         if start_date and end_date:
-            query = {"ValueDate": {"$gte": start_date, "$lte": end_date}}
+            query["ValueDate"] = {"$gte": start_date, "$lte": end_date}
         elif start_date:
-            query = {"ValueDate": {"$gte": start_date}}
+            query["ValueDate"] = {"$gte": start_date}
         elif end_date:
-            query = {"ValueDate": {"$lte": end_date}}
+            query["ValueDate"] = {"$lte": end_date}
         return query
 
     def _get_transactions_by_indicator(
@@ -69,7 +107,8 @@ class TransactionService:
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
     ):
-        query: dict = self._add_query_range(start_date, end_date)
+        query = {}
+        query: dict = self._add_query_range({}, start_date, end_date)
         query = self._add_indicator_to_query(query, indicator)
         return self.db.find(query, {"_id": 0})
 
@@ -82,6 +121,10 @@ class TransactionService:
         if notes is None:
             set.pop("Notes")
         return self.db.update_one({"_id": id}, {"$set": set})
+
+    def _add_phrase_to_query(self, query: dict, phrase: str):
+        query["Narration"] = {"$regex": phrase, "$options": "i"}
+        return query
 
     @staticmethod
     def generate_tailwind_colors():

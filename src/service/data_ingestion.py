@@ -80,16 +80,18 @@ class DataIngestionService:
         transaction_result = self.ingest_transactions(toCSV, debug)
         vendor_result = self.ingest_vendor_data(toCSV, debug)
 
-        self.move_processed_files_to_old()
+        moved_files = self.move_processed_files_to_old()
         modified_documents = self.map_transactions_to_vendors()
 
         return (
             len(transaction_result.inserted_ids)
             + len(vendor_result.inserted_ids)
             + modified_documents
+            + moved_files
         )
 
     def map_transactions_to_vendors(self) -> int:
+        log.info("Mapping transactions to vendor data")
         modified_count = self.find_vendor_matches_update_db(
             "zomato",
             self.zomato_collection,
@@ -155,7 +157,7 @@ class DataIngestionService:
                     f"Multiple matches found for transaction: {txn.get('_id')}, not updating. Matches: {matched_ids}"
                 )
         if result == 0:
-            log.info(f"No matches found for vendor: {vendor_phrase}")
+            log.warn(f"No matches found for vendor: {vendor_phrase}")
 
         return result
 
@@ -181,13 +183,22 @@ class DataIngestionService:
 
         return result
 
-    def move_processed_files_to_old(self):
+    def move_processed_files_to_old(self) -> int:
         log.info("renaming processed files...")
 
-        for file in self.hdfc_files + self.icici_files + self.zomato_files:
-            if "old" not in file:
-                parent_dir = os.path.dirname(file)
-                old_dir = os.path.join(parent_dir, ".old")
+        valid_files = [
+            file
+            for file in self.hdfc_files + self.icici_files + self.zomato_files
+            if "old" not in file
+        ]
 
-                os.makedirs(old_dir, exist_ok=True)
-                os.rename(file, os.path.join(old_dir, os.path.basename(file)))
+        if len(valid_files) == 0:
+            log.info("No files to move to .old directory.")
+
+        for file in valid_files:
+            parent_dir = os.path.dirname(file)
+            old_dir = os.path.join(parent_dir, ".old")
+
+            os.makedirs(old_dir, exist_ok=True)
+            os.rename(file, os.path.join(old_dir, os.path.basename(file)))
+        return len(valid_files)

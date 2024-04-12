@@ -69,6 +69,7 @@ async def render_cards_template(
     request: Request,
     month: Optional[int] = None,
     indicator: Optional[TransactionIndicator] = None,
+    phrase: Optional[str] = None,
 ):
     st = time.time_ns()
     tags = []
@@ -84,9 +85,6 @@ async def render_cards_template(
     if indicator is TransactionIndicator.PENDING:
         view_cols["DepositAmt"] = 0
         priceHeader = "WithdrawalAmt"
-    elif indicator is TransactionIndicator.SETTLED:
-        view_cols["WithdrawalAmt"] = 0
-        priceHeader = "DepositAmt"
 
     transactions_data = list(
         txnSrv.get_all_transactions(
@@ -94,7 +92,9 @@ async def render_cards_template(
             start_date=start_date,
             end_date=end_date,
             indicator=indicator,
-        ).sort("ValueDate", 1)
+            phrase=phrase,
+            combine_with_vendor_data=True,
+        )
     )
 
     display_months = get_months()
@@ -111,6 +111,8 @@ async def render_cards_template(
     tags.append(
         f"Indicator: {indicator.value}" if indicator is not None else "All Txns"
     )
+    if phrase is not None:
+        tags.append(f"Phrase: {phrase}")
 
     return catalog.render(
         "cards",

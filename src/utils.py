@@ -109,4 +109,7 @@ def convert_camel_to_title(camel_str):
 
 
 def pipe_human_readable_date(date: datetime.datetime) -> str:
-    return date.strftime("%B %d, %Y")
+    if date.time() == datetime.time(0):
+        return date.strftime("%B %d, %Y")
+    else:
+        return date.strftime("%B %d, %Y, %I:%M%p")

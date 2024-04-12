@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg
+  viewBox="1.44 19.729 97.264 64.372"
+  xmlns="http://www.w3.org/2000/svg"
+  fill="currentColor"
+>
+  <g
+    transform="matrix(1, 0, 0, 1, -1.7763568394002505e-15, -1.7763568394002505e-15)"
+  >
+    <g>
+      <path d="M98.7,84.1H1.3V19.7h97.3V84.1z M4.3,81.1h91.3V22.7H4.3V81.1z" />
+    </g>
+    <g>
+      <rect x="2.8" y="31.6" width="94.3" height="12.2" />
+    </g>
+    <g>
+      <rect x="11.3" y="59" width="21.6" height="3.9" />
+    </g>
+    <g>
+      <rect x="11.3" y="66.7" width="29.2" height="3.9" />
+    </g>
+  </g>
+</svg>

@@ -125,8 +125,8 @@ async def render_cards_template(
         selected_month=month if month is not None else -1,
     )
 
-    # return catalog.render("cards", **context)
-    return jinja_env.get_template("cards.html").render(context)
+    return catalog.render("cards", **context)
+    # return jinja_env.get_template("cards.html").render(context)
 
 
 @router.get("/ingest-data", response_class=HTMLResponse)
@@ -211,7 +211,7 @@ async def dashboard(request: Request, month: Optional[int] = None):
         months=get_months(),
         selected_month=month if month is not None else -1,
     )
-    return jinja_env.get_template("index.html").render(context)
+    return jinja_env.get_template("index.jinja").render(context)
 
 
 def get_all_unread_transaction_files() -> list[str]:

@@ -1,19 +1,22 @@
+import datetime
+import time
+from functools import partial
+from typing import Optional
+
+import pandas as pd
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse
 from jinja2 import Environment, FileSystemLoader
+from jinjax.catalog import Catalog
+
+from src.service.data_ingestion import DataIngestionService
+from src.service.transactions import TransactionIndicator, TransactionService
 from src.utils import (
+    convert_camel_to_title,
+    get_all_file_paths,
     get_logger,
     pipe_human_readable_date,
-    get_all_file_paths,
-    convert_camel_to_title,
 )
-
-import datetime
-from typing import Optional
-from src.service.data_ingestion import DataIngestionService
-from src.service.transactions import TransactionService, TransactionIndicator
-import time
-from functools import partial
 
 router = APIRouter()
 
@@ -21,9 +24,29 @@ log = get_logger(__name__)
 
 jinja_env = Environment(loader=FileSystemLoader("src/templates"))
 
-jinja_env.filters["titleCase"] = convert_camel_to_title
-jinja_env.filters["humanDate"] = pipe_human_readable_date
-jinja_env.filters["currency"] = lambda value: f"₹ {value:,.2f}"
+custom_filters = {}
+custom_filters["titleCase"] = convert_camel_to_title
+custom_filters["humanDate"] = pipe_human_readable_date
+custom_filters["currency"] = lambda value: f"₹ {value:,.2f}"
+
+jinja_env.filters.update(custom_filters)
+
+catalog = Catalog()
+catalog.add_folder("src/templates")
+catalog.jinja_env.filters.update(custom_filters)
+
+
+@router.get("/table", response_class=HTMLResponse)
+async def render_table_template(request: Request):
+    # Create a dummy DataFrame
+    df = pd.DataFrame(
+        {
+            "A": [1, 2, 3, 4, 5],
+            "B": ["a", "b", "c", "d", "e"],
+            "C": [1.1, 2.2, 3.3, 4.4, 5.5],
+        }
+    )
+    return catalog.render("table", name="Transaction Data", df=df)
 
 
 @router.post("/submit")
@@ -101,6 +124,8 @@ async def render_cards_template(
         data=transactions_data,
         selected_month=month if month is not None else -1,
     )
+
+    # return catalog.render("cards", **context)
     return jinja_env.get_template("cards.html").render(context)
 
 

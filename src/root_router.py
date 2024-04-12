@@ -26,14 +26,14 @@ jinja_env = Environment(loader=FileSystemLoader("src/templates"))
 
 custom_filters = {}
 custom_filters["titleCase"] = convert_camel_to_title
-custom_filters["humanDate"] = pipe_human_readable_date
+custom_filters["date"] = pipe_human_readable_date
 custom_filters["currency"] = lambda value: f"₹ {value:,.2f}"
 
-jinja_env.filters.update(custom_filters)
 
 catalog = Catalog()
 catalog.add_folder("src/templates")
 catalog.jinja_env.filters.update(custom_filters)
+jinja_env.filters.update(custom_filters)
 
 
 @router.get("/table", response_class=HTMLResponse)
@@ -59,9 +59,7 @@ async def call_server(
     txnSrv = TransactionService()
     res = txnSrv.update_transaction(id, notes, type)
     log.debug(res)
-    if id is not None:
-        return {"orderId": id, "notes": notes, "type": type}
-    return {"message": "Failed to update transaction"}
+    return {"orderId": id, "notes": notes, "type": type}
 
 
 @router.get("/cards", response_class=HTMLResponse)
@@ -84,7 +82,11 @@ async def render_cards_template(
     priceHeader = "WithdrawalAmt"
     if indicator is TransactionIndicator.PENDING:
         view_cols["DepositAmt"] = 0
-        priceHeader = "WithdrawalAmt"
+
+    if phrase:
+        view_cols["special.status"] = 0
+        view_cols["special.paymentStatus"] = 0
+        view_cols["special.dishString"] = 0
 
     transactions_data = list(
         txnSrv.get_all_transactions(
@@ -115,7 +117,7 @@ async def render_cards_template(
         tags.append(f"Phrase: {phrase}")
 
     return catalog.render(
-        "cards",
+        "TxnPage",
         request=request,
         heading="_id",
         name="Transaction Data",
@@ -210,7 +212,7 @@ async def dashboard(request: Request, month: Optional[int] = None):
         months=get_months(),
         selected_month=month if month is not None else -1,
     )
-    return jinja_env.get_template("index.jinja").render(context)
+    return jinja_env.get_template("LandingPage.jinja").render(context)
 
 
 def get_all_unread_transaction_files() -> list[str]:

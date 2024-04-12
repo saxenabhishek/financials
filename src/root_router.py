@@ -112,7 +112,8 @@ async def render_cards_template(
         f"Indicator: {indicator.value}" if indicator is not None else "All Txns"
     )
 
-    context = dict(
+    return catalog.render(
+        "cards",
         request=request,
         heading="_id",
         name="Transaction Data",
@@ -125,21 +126,17 @@ async def render_cards_template(
         selected_month=month if month is not None else -1,
     )
 
-    return catalog.render("cards", **context)
-    # return jinja_env.get_template("cards.html").render(context)
-
 
 @router.get("/ingest-data", response_class=HTMLResponse)
 async def ingest_data(request: Request):
     st = time.time_ns()
     service = DataIngestionService()
     res = service.ingest_data()
-    context = dict(
-        request=request,
+    return catalog.render(
+        "good",
         title=f"{res} Transactions Ingested in {round((time.time_ns() - st)*1e-9, 3)}secs",
         task="Ingest Data Task",
     )
-    return jinja_env.get_template("good.html").render(context)
 
 
 @router.get("/", response_class=HTMLResponse)

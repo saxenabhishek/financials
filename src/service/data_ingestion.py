@@ -50,7 +50,7 @@ class DataIngestionService:
 
         # If DataFrame is still empty, no valid file paths were provided
         if df.empty:
-            log.error("No valid Bank file paths were provided.")
+            log.warn("No valid Bank file paths were provided.")
             return InsertManyResult(acknowledged=False, inserted_ids=[])
 
         df["TransactionIndicator"] = TransactionIndicator.PENDING.value
@@ -72,7 +72,7 @@ class DataIngestionService:
         try:
             result = self.transactions.insert_many(records, ordered=False)
         except Exception as e:
-            log.error(f"Error inserting records: {e}")
+            log.warn(f"Error inserting records: {e}")
 
         return result
 
@@ -170,7 +170,7 @@ class DataIngestionService:
 
         # this is a simplification since diff vendors would be in diff collections
         if zomato_df.empty:
-            log.error("No valid vendor file paths were provided.")
+            log.warn("No valid vendor file paths were provided.")
             return InsertManyResult(acknowledged=False, inserted_ids=[])
 
         records = zomato_df.to_dict(orient="records")
@@ -179,7 +179,7 @@ class DataIngestionService:
         try:
             result = self.zomato_collection.insert_many(records, ordered=False)
         except Exception as e:
-            log.error(f"Error inserting records: {e}")
+            log.warn(f"Error inserting records: {e}")
 
         return result
 

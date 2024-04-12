@@ -52,11 +52,9 @@ class TransactionService:
         match_query_args.append(self._add_query_range({}, start_date, end_date))
         if indicator:
             match_query_args.append(self._add_indicator_to_query({}, indicator))
-        print(match_query_args)
         return self.db.aggregate(
             [
                 {"$match": {"$and": match_query_args}},
-                {"$project": cols},
                 {
                     "$lookup": {
                         "from": phrase,
@@ -66,6 +64,7 @@ class TransactionService:
                     }
                 },
                 {"$unwind": {"path": "$special"}},
+                {"$project": cols},
             ]
         )
 

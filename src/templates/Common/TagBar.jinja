@@ -1,0 +1,11 @@
+{#def tags=["can't find data"] #}
+
+<article class="my-4 divide-x-2">
+  {% for tag in tags %}
+  <span
+    class="inline-block bg-gradient-to-r from-blue-300 to-blue-600 bg-clip-text text-transparent text-sm font-bold px-2"
+  >
+    {{ tag }}</span
+  >
+  {% endfor %}
+</article>

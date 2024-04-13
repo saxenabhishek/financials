@@ -27,10 +27,12 @@ class TransactionService:
         indicator: Optional[TransactionIndicator] = None,
         phrase: Optional[str] = None,
         combine_with_vendor_data: bool = False,
+        sort_by: Optional[str] = None,
     ):
+        # Jump to different flow to show mapped data
         if combine_with_vendor_data and phrase:
             return self.get_all_vendor_transactions(
-                cols, start_date, end_date, indicator, phrase
+                cols, start_date, end_date, indicator, phrase, sort_by
             )
         query: dict = {}
         query = self._add_query_range(query, start_date, end_date)
@@ -38,7 +40,10 @@ class TransactionService:
             query = self._add_indicator_to_query(query, indicator)
         if phrase:
             query = self._add_phrase_to_query(query, phrase)
-        return self.db.find(query, cols) if cols else self.db.find(query)
+        transactions = self.db.find(query, cols) if cols else self.db.find(query)
+        if sort_by:
+            return transactions.sort(sort_by)
+        return transactions
 
     def get_all_vendor_transactions(
         self,
@@ -47,6 +52,7 @@ class TransactionService:
         end_date: Optional[datetime] = None,
         indicator: Optional[TransactionIndicator] = None,
         phrase: Optional[str] = None,
+        sort_by: Optional[str] = None,
     ):
         match_query_args = [{phrase: {"$exists": True}}]
         match_query_args.append(self._add_query_range({}, start_date, end_date))
@@ -65,6 +71,7 @@ class TransactionService:
                 },
                 {"$unwind": {"path": "$special"}},
                 {"$project": cols},
+                {"$sort": {sort_by: 1}},
             ]
         )
 

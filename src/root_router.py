@@ -1,7 +1,7 @@
 import datetime
 import time
 from functools import partial
-from typing import Optional
+from typing import Optional, Literal
 
 import pandas as pd
 from fastapi import APIRouter, Form, Request
@@ -67,7 +67,7 @@ async def render_cards_template(
     request: Request,
     month: Optional[int] = None,
     indicator: Optional[TransactionIndicator] = None,
-    phrase: Optional[str] = None,
+    phrase: Optional[Literal["zomato", "zepto", "blinkit"]] = None,
 ):
     st = time.time_ns()
     tags = []
@@ -96,6 +96,7 @@ async def render_cards_template(
             indicator=indicator,
             phrase=phrase,
             combine_with_vendor_data=True,
+            sort_by="ValueDate",
         )
     )
 
@@ -120,7 +121,7 @@ async def render_cards_template(
         "TxnPage",
         request=request,
         heading="_id",
-        name="Transaction Data",
+        name="Transactions",
         priceHeader=priceHeader,
         indicatorHeader="TransactionIndicator",
         indicatorColors=txnSrv.generate_tailwind_colors(),

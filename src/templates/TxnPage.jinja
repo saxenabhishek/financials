@@ -17,10 +17,9 @@ selected_month, priceHeader#}
     <link rel="stylesheet" href="/static/styles.css" />
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/static/styles.css" />
     <script src="/static/cards.js" defer></script>
   </head>
-  <body class="bg-gray-100 container mx-auto px-4 relative">
+  <body class="bg-gray-50 container mx-auto px-4 relative">
     <header>
       <h1 class="text-3xl font-medium mt-2">{{ name }}</h1>
       <!-- Back Button -->
@@ -61,82 +60,26 @@ selected_month, priceHeader#}
     <!-- Cards -->
     <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {% for item in data %}
-      <section
-        class="bg-white rounded-lg shadow-md p-4 col-span-1 mb-2 relative"
-      >
-        <h2 class="text-lg font-semibold mb-4 truncate">{{ item[heading] }}</h2>
-        <span
-          class="text-7xl opacity-15 text-blue-300 font-bold absolute top-5 right-0 mr-4"
-          >{{ loop.index }}</span
-        >
-        {% if item[indicatorHeader] != "Settled" %}
-        <form class="mt-4">
-          <!-- Add hidden input fields for additional data -->
-          <input type="hidden" name="id" value="{{ item['_id'] }}" />
-          <div class="mb-4">
-            <label for="text_input" class="block text-gray-700">Notes:</label>
-            <input type="text" id="notes" name="Notes" placeholder="Enter your
-            notes here..." value="{{ item.get(" Notes", "") }}" class="w-full
-            px-3 py-2 border border-gray-300 rounded focus:outline-none
-            focus:border-indigo-500" />
-          </div>
-          <div class="flex justify-between">
-            <button
-              data-type="Settled"
-              class="{{
-                indicatorColors['Settled']
-              }} font-bold py-2 px-4 rounded w-1/4"
-            >
-              Settle
-            </button>
-            <button
-              data-type="Needs Split"
-              class="{{
-                indicatorColors['Needs Split']
-              }} font-bold py-2 px-4 rounded w-1/4"
-            >
-              Split
-            </button>
-          </div>
-        </form>
-        {% endif %}
-        <ul>
-          {% for key, value in item.items() %} {% if key != heading %}
-          <li
-            class="{% if key == priceHeader %} text-blue-500 font-medium {% endif %} p-1"
-          >
-            <!-- Header -->
-            <p class="font-extralight text-blue-900">{{ key | titleCase }}:</p>
-            <!-- Value Formatting -->
-            {% if 'Amt' in key or 'Balance' in key %} {{ value | currency }}
-            <!-- Currency -->
-            {% elif indicatorHeader in key %}
-            <!-- Indicator -->
-            <span
-              class="inline-block rounded-full px-3 py-1 text-sm font-semibold {{
-                indicatorColors[value]
-              }} mr-2"
-              >{{ value }}</span
-            >
-            {% elif 'Date' in key %} {{ value | humanDate }}
-            <!-- Date -->
-            {% elif value is mapping %}
-            <!-- Nested dict -->
-            <ul>
-              {% for sub_key, sub_value in value.items() %}
-              <li class="text-gray-500">
-                &nbsp;{{ sub_key | titleCase }}:
-                <span class="text-black"> {{ sub_value }} </span>
-              </li>
-              {% endfor %}
-            </ul>
-            <!-- Default -->
-            {% else %} {{ value }} {% endif %}
-          </li>
-          {% endif %} {% endfor %}
-        </ul>
-      </section>
+      <!-- prettier-ignore -->
+      <Common.Card
+        item={item}
+        heading={heading}
+        indicatorHeader={indicatorHeader}
+        indicatorColors={indicatorColors}
+        txnNumber={loop.index}
+        priceHeader={priceHeader}
+      />
       {% endfor %}
     </main>
+    <footer>
+      Credit Card by yeji Kim from
+      <a
+        href="https://thenounproject.com/browse/icons/term/credit-card/"
+        target="_blank"
+        title="Credit Card Icons"
+        >Noun Project</a
+      >
+      (CC BY 3.0)
+    </footer>
   </body>
 </html>

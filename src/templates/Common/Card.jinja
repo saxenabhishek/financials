@@ -1,0 +1,139 @@
+{#def item, heading, indicatorHeader, indicatorColors, txnNumber ,priceHeader#}
+
+<section class="bg-white rounded-lg shadow-md p-4 col-span-1 mb-2 relative">
+  <h2 class="text-lg font-semibold mb-4 truncate">{{ item[heading] }}</h2>
+  <span
+    class="text-6xl opacity-15 text-emerald-700 font-bold absolute top-0 right-0 mr-4"
+    >{{ txnNumber }}</span
+  >
+
+  <!-- Form field -->
+  {% if item[indicatorHeader] != "Settled" %}
+  <form class="mt-4">
+    <!-- Add hidden input fields for additional data -->
+    <input type="hidden" name="id" value="{{ item['_id'] }}" />
+    <div class="mb-4">
+      <label for="text_input" class="block text-gray-700">Notes:</label>
+      <input type="text" id="notes" placeholder="Enter your notes here..."
+      value="{{ item.get("Notes", "") }}" class="w-full px-3 py-2 border
+      border-gray-300 rounded focus:outline-none focus:border-indigo-500" />
+    </div>
+    <div class="flex justify-between">
+      <button
+        data-type="Settled"
+        class="px-2 py-1 rounded w-24 flex items-center justify-between ring-1 ring-emerald-500 bg-emerald-300 hover:bg-emerald-500 transition-colors duration-200"
+      >
+        Settle
+        <img src="static/noun-credit-card.svg" class="w-5 ml-1 text-white" />
+      </button>
+      <button
+        data-type="Needs Split"
+        class="px-2 py-1 rounded w-24 flex items-center justify-between ring-1 ring-emerald-500 hover:bg-gray-200 transition-colors duration-200"
+      >
+        Split
+        <img class="w-5 ml-1" src="static/icons8-split-50.png" alt="split" />
+      </button>
+    </div>
+  </form>
+  {% endif %}
+
+  <!-- Speical data if there -->
+  {% if item.get("special", False) %}
+  <div class="mt-4 bg-emerald-50 rounded-md p-4">
+    <div class="flex flex-row justify-between">
+      <div>
+        <!-- Restaurant Name -->
+        <h3 class="text-lg font-semibold text-emerald-800">
+          {{ item.special.restaurantName }}
+        </h3>
+        <!-- Total Cost -->
+        <p class="text-green-500 font-medium">
+          {{ item.special.totalCost | currency }}
+        </p>
+        <!-- Order Date -->
+        <p class="text-sm">
+          {{ item.special.orderDate | date }}
+        </p>
+      </div>
+      <!-- Restaurant Thumbnail -->
+      <img
+        src="{{ item.special.restaurantThumb }}"
+        alt="Restaurant Thumbnail"
+        class="h-16 rounded-md ml-1 object-cover ring-1 ring-green-500"
+      />
+    </div>
+
+    <!-- Display Dishes as a table -->
+    <div class="my-4 bg-green-200 rounded-lg p-2 text-pretty overflow-hidden">
+      <table class="w-full text-emerald-900">
+        <tbody>
+          {% for dish in item.special.dishes %}
+          <tr>
+            <td>
+              {{ dish.quantity }}
+            </td>
+            <td class="truncate">
+              {{ dish.name }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Other fields -->
+    <ul>
+      <!-- The fields included here are for zomato specifically, remove them when dealing with new vendors -->
+      {% for key, value in item.special.items() %} {% if key not in
+      ['restaurantName', 'restaurantThumb', '_id', 'dishes', 'totalCost',
+      'orderDate'] %}
+      <li class="text-gray-700 overflow-hidden">
+        <span class="font-extralight text-blue-900"
+          >{{ key | titleCase }}:</span
+        >
+        <span class="truncate" title="{{ value }}">{{ value }}</span>
+      </li>
+      {% endif %} {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- Transaction Fields -->
+  <ul>
+    {% for key, value in item.items() %} {% if key not in [heading, "special"]
+    %}
+    <li
+      class="{% if key == priceHeader %} text-emerald-500 font-medium {% endif %} p-1"
+    >
+      <!-- Header -->
+      <p class="font-extralight text-blue-900">{{ key | titleCase }}:</p>
+
+      <!-- Value Formatting -->
+      {% if 'Amt' in key or 'Balance' in key %} {{ value | currency }}
+      <!-- Currency -->
+      {% elif indicatorHeader in key %}
+      <!-- Indicator -->
+      <span
+        class="inline-block rounded-full px-3 py-1 text-sm font-semibold {{
+          indicatorColors[value]
+        }} mr-2"
+        >{{ value }}</span
+      >
+      {% elif 'Date' in key %} {{ value | date }}
+      <!-- Date -->
+      {% elif value is mapping %}
+      <!-- Nested dict -->
+      <ul>
+        {% for sub_key, sub_value in value.items() %}
+        <li class="text-gray-500">
+          &nbsp;{{ sub_key | titleCase }}:
+          <span class="text-black"> {{ sub_value }} </span>
+        </li>
+        {% endfor %}
+      </ul>
+      <!-- Default -->
+      {% else %} {{ value }} {% endif %}
+    </li>
+    {% endif %} {% endfor %}
+  </ul>
+</section>

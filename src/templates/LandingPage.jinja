@@ -1,3 +1,5 @@
+{#def unread_transactions, months, selected_month, vendor_metrics, kpi_data#}
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -20,7 +22,6 @@
         Welcome to the Dashboard
       </h1>
       <!-- Action Button -->
-      <!-- disabled="{{'false' if unread_transactions.length != 0 else 'true' }}" -->
       <button
         onclick="location.href='/ingest-data'"
         {{ 'disabled' if unread_transactions|length == 0}}
@@ -30,23 +31,14 @@
       </button>
 
       <!-- Ribbon Bar - Buttons for each month -->
-      <div class="flex items-center space-x-4 my-2">
-        <span class="text-gray-600">Select Time Period:</span>
-        <a
-          href="/"
-          class="bg-gray-500 hover:bg-gray-700 text-white font-medium py-1 px-4 rounded"
-        >
-          All Data
-        </a>
-        {% for month in months %}
-        <a
-          href="?month={{ loop.index }}"
-          class="bg-blue-500 hover:bg-blue-700 text-white font-normal py-1 px-4 rounded {% if loop.index == selected_month %}bg-blue-700 ring{%endif%}"
-        >
-          {{ month.name }}
-        </a>
-        {% endfor %}
-      </div>
+      <!-- prettier-ignore -->
+      <Common.RibbonBar
+        label="Time Period"
+        no_data_label="All Time"
+        options={months}
+        no_data_link="?"
+        selected_option={selected_month}
+      />
 
       <!-- KPI Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -59,7 +51,7 @@
             <p class="text-3xl font-bold text-{{ kpi.color }}">
               {{ kpi.value }}
             </p>
-            {% if kpi.subtext %}
+            {% if kpi.get("subtext",False) %}
             <p class="text-sm text-gray-500">{{ kpi.subtext }}</p>
             {% endif %}
         </a>

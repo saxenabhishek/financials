@@ -1,5 +1,5 @@
-{#def name, months, tags, data, indicatorHeader, indicatorColors, heading,
-selected_month, priceHeader#}
+{#def name, months, tags, data, indicatorHeader, heading, selected_month,
+priceHeader#}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -28,30 +28,16 @@ selected_month, priceHeader#}
       >
         Go Back
       </button>
-      <!-- Ribbon Bar - Buttons for each month -->
-      <nav class="flex items-center space-x-4 my-2 mx-2">
-        <span class="text-gray-600">Select Time Period:</span>
-        <a
-          href="?"
-          class="bg-gray-500 hover:bg-gray-700 text-white font-normal py-1 px-4 rounded"
-        >
-          All Data
-        </a>
-        {% for month in months %}
-        <a
-          href="{{ month.link }}"
-          class="bg-emerald-500 hover:bg-emerald-700 text-white font-normal py-1 px-4 rounded {% if loop.index == selected_month %}bg-emerald-700 {%endif%}"
-        >
-          {{ month.name }}
-        </a>
-        {% endfor %}
-        <a
-          href="?phrase=zomato"
-          class="bg-blue-500 hover:bg-blue-700 text-white font-normal py-1 px-4 rounded m-2"
-        >
-          Zomato Phrase
-        </a>
-      </nav>
+      <!-- Buttons for each month -->
+      <!-- prettier-ignore -->
+      <Common.RibbonBar
+        label="Time Period"
+        options={months}
+        backLink="?"
+        selected_option={selected_month}
+      />
+
+      <!-- Buttons for each Vendor -->
 
       <!-- Info Tags bar -->
       <!-- prettier-ignore -->
@@ -65,13 +51,12 @@ selected_month, priceHeader#}
         item={item}
         heading={heading}
         indicatorHeader={indicatorHeader}
-        indicatorColors={indicatorColors}
         txnNumber={loop.index}
         priceHeader={priceHeader}
       />
       {% endfor %}
     </main>
-    <footer>
+    <footer class="bg-orange-50">
       Credit Card by yeji Kim from
       <a
         href="https://thenounproject.com/browse/icons/term/credit-card/"

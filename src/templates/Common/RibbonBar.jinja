@@ -1,25 +1,19 @@
-{#def label, backLink, options, selected_option #}
+{#def label, no_data_label="All Data", no_data_link, options, selected_option #}
 <!-- do this please later -->
 <section class="flex items-center space-x-4 my-2 mx-2">
   <span class="text-gray-600">{{ label }}:</span>
   <a
-    href="{{ backLink }}"
+    href="{{ no_data_link }}"
     class="bg-gray-500 hover:bg-gray-700 text-white font-normal py-1 px-4 rounded"
   >
-    All Data
+    {{ no_data_label }}
   </a>
   {% for month in options %}
   <a
     href="{{ month.link }}"
-    class="bg-emerald-500 hover:bg-emerald-700 text-white font-normal py-1 px-4 rounded {% if loop.index == selected_option %}bg-emerald-700 {%endif%}"
+    class="bg-emerald-500 hover:bg-emerald-700 text-white font-normal py-1 px-2 rounded {% if month.name == selected_option %}bg-emerald-700 ring ring-emerald-500 {%endif%}"
   >
-    {{ month.name }}
+    {{ month.name | titleCase }}
   </a>
   {% endfor %}
-  <a
-    href="?phrase=zomato"
-    class="bg-blue-500 hover:bg-blue-700 text-white font-normal py-1 px-4 rounded m-2"
-  >
-    Zomato Phrase
-  </a>
 </section>

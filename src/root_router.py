@@ -97,19 +97,28 @@ async def render_cards_template(
             end_date=end_date,
             indicator=indicator,
             phrase=phrase,
-            combine_with_vendor_data=True,
+            combine_with_vendor_data=False,
             sort_by="ValueDate",
         )
     )
 
-    display_months = get_months()
+    months_list = get_months()
     month_link_gen = partial(
         generate_next_link, "/cards", indicator=indicator, phrase=phrase
     )
 
+    vendor_link_gen = partial(
+        generate_next_link, "/cards", indicator=indicator, month=month
+    )
+
     display_months = [
-        dict(link=month_link_gen(month=month["id"]), **month)
-        for month in display_months
+        dict(link=month_link_gen(month=idx + 1), name=month)
+        for idx, month in enumerate(months_list)
+    ]
+
+    display_vendors = [
+        dict(link=vendor_link_gen(phrase=vendor), name=vendor)
+        for vendor in Vendor.vendor_list
     ]
 
     tags.append(f"{len(transactions_data)} Txns")
@@ -121,6 +130,10 @@ async def render_cards_template(
     if phrase is not None:
         tags.append(f"Phrase: {phrase}")
 
+    selected_month = ""
+    if month is not None:
+        selected_month = months_list[month - 1]
+
     return catalog.render(
         "TransactionsPage",
         request=request,
@@ -130,7 +143,9 @@ async def render_cards_template(
         indicatorHeader="TransactionIndicator",
         tags=tags,
         months=display_months,
-        selected_month=month if month is not None else -1,
+        selected_month=selected_month,
+        selected_vendor=phrase,
+        vendors=display_vendors,
         data=transactions_data,
     )
 
@@ -178,7 +193,20 @@ async def dashboard(request: Request, month: Optional[int] = None):
     pending_transactions = txnSrv.get_pending_transactions(start_date, end_date)
     split_transactions = txnSrv.get_split_transactions(start_date, end_date)
     settled_transactions = txnSrv.get_settled_transactions(start_date, end_date)
+
     kpi_link_gen = partial(generate_next_link, "/cards", month=month, phrase=None)
+
+    months_list = get_months()
+    month_link_gen = partial(generate_next_link, "/", phrase=None, indicator=None)
+
+    display_months = [
+        {"link": month_link_gen(month=idx + 1), "name": month}
+        for idx, month in enumerate(months_list)
+    ]
+
+    selected_month = ""
+    if month is not None:
+        selected_month = months_list[month - 1]
 
     kpi_data = [
         {
@@ -213,10 +241,10 @@ async def dashboard(request: Request, month: Optional[int] = None):
         vendor_metrics=vendor_metrics,
         unread_transactions=unread_transactions,
         kpi_data=kpi_data,
-        months=get_months(),
-        selected_month=month if month is not None else -1,
+        months=display_months,
+        selected_month=selected_month,
     )
-    return jinja_env.get_template("LandingPage.jinja").render(context)
+    return catalog.render("LandingPage", **context)
 
 
 def get_all_unread_transaction_files() -> list[str]:
@@ -263,8 +291,7 @@ def get_months():
         "December",
     ]
     months_list = months_list[: datetime.datetime.now().month]
-    months = [{"id": i + 1, "name": month} for i, month in enumerate(months_list)]
-    return months
+    return months_list
 
 
 def generate_next_link(

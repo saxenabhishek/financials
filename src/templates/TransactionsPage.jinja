@@ -1,5 +1,5 @@
 {#def name, months, tags, data, indicatorHeader, heading, selected_month,
-priceHeader#}
+vendors, selected_vendor, priceHeader#}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -32,12 +32,21 @@ priceHeader#}
       <!-- prettier-ignore -->
       <Common.RibbonBar
         label="Time Period"
+        no_data_label="All Time"
         options={months}
-        backLink="?"
+        no_data_link="?"
         selected_option={selected_month}
       />
 
       <!-- Buttons for each Vendor -->
+      <!-- prettier-ignore -->
+      <Common.RibbonBar
+        label="Vendor"
+        options={vendors}
+        no_data_label="No Vendor"
+        no_data_link="?"
+        selected_option={selected_vendor}
+      />
 
       <!-- Info Tags bar -->
       <!-- prettier-ignore -->

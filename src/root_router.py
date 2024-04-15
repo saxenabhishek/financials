@@ -1,7 +1,7 @@
 import datetime
 import time
 from functools import partial
-from typing import Optional, Literal
+from typing import Optional
 
 import pandas as pd
 from fastapi import APIRouter, Form, Request
@@ -11,6 +11,7 @@ from jinjax.catalog import Catalog
 
 from src.service.data_ingestion import DataIngestionService
 from src.service.transactions import TransactionIndicator, TransactionService
+from src.service.vendor import Vendor
 from src.utils import (
     convert_camel_to_title,
     get_all_file_paths,
@@ -67,7 +68,7 @@ async def render_cards_template(
     request: Request,
     month: Optional[int] = None,
     indicator: Optional[TransactionIndicator] = None,
-    phrase: Optional[Literal["zomato", "zepto", "blinkit"]] = None,
+    phrase: Optional[Vendor.vendors_type] = None,
 ):
     st = time.time_ns()
     tags = []
@@ -84,6 +85,7 @@ async def render_cards_template(
         view_cols["DepositAmt"] = 0
 
     if phrase:
+        # TODO: Ask service which ones to mask
         view_cols["special.status"] = 0
         view_cols["special.paymentStatus"] = 0
         view_cols["special.dishString"] = 0
@@ -101,7 +103,9 @@ async def render_cards_template(
     )
 
     display_months = get_months()
-    month_link_gen = partial(generate_next_link, "/cards", indicator=indicator)
+    month_link_gen = partial(
+        generate_next_link, "/cards", indicator=indicator, phrase=phrase
+    )
 
     display_months = [
         dict(link=month_link_gen(month=month["id"]), **month)
@@ -118,17 +122,16 @@ async def render_cards_template(
         tags.append(f"Phrase: {phrase}")
 
     return catalog.render(
-        "TxnPage",
+        "TransactionsPage",
         request=request,
         heading="_id",
         name="Transactions",
         priceHeader=priceHeader,
         indicatorHeader="TransactionIndicator",
-        indicatorColors=txnSrv.generate_tailwind_colors(),
         tags=tags,
         months=display_months,
-        data=transactions_data,
         selected_month=month if month is not None else -1,
+        data=transactions_data,
     )
 
 
@@ -175,7 +178,7 @@ async def dashboard(request: Request, month: Optional[int] = None):
     pending_transactions = txnSrv.get_pending_transactions(start_date, end_date)
     split_transactions = txnSrv.get_split_transactions(start_date, end_date)
     settled_transactions = txnSrv.get_settled_transactions(start_date, end_date)
-    kpi_link_gen = partial(generate_next_link, "/cards", month=month)
+    kpi_link_gen = partial(generate_next_link, "/cards", month=month, phrase=None)
 
     kpi_data = [
         {
@@ -265,7 +268,10 @@ def get_months():
 
 
 def generate_next_link(
-    route, indicator: Optional[TransactionIndicator], month: Optional[int]
+    route,
+    indicator: Optional[TransactionIndicator],
+    month: Optional[int],
+    phrase: Optional[str],
 ):
     link = route + "?"
     link_args = []
@@ -273,4 +279,6 @@ def generate_next_link(
         link_args.append(f"month={month}")
     if indicator is not None:
         link_args.append(f"indicator={indicator.value}")
+    if phrase is not None:
+        link_args.append(f"phrase={phrase}")
     return link + "&".join(link_args)

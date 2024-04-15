@@ -2,6 +2,7 @@ from src.db import mongo
 from datetime import datetime
 from typing import Optional
 from src.service.const import TransactionIndicator
+from src.service.vendor import Vendor
 
 
 class TransactionService:
@@ -25,14 +26,14 @@ class TransactionService:
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         indicator: Optional[TransactionIndicator] = None,
-        phrase: Optional[str] = None,
+        phrase: Optional[Vendor.vendors_type] = None,
         combine_with_vendor_data: bool = False,
         sort_by: Optional[str] = None,
     ):
         # Jump to different flow to show mapped data
         if combine_with_vendor_data and phrase:
             return self.get_all_vendor_transactions(
-                cols, start_date, end_date, indicator, phrase, sort_by
+                phrase, cols, start_date, end_date, indicator, sort_by
             )
         query: dict = {}
         query = self._add_query_range(query, start_date, end_date)
@@ -47,14 +48,17 @@ class TransactionService:
 
     def get_all_vendor_transactions(
         self,
+        phrase: Vendor.vendors_type,
         cols: Optional[dict] = None,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         indicator: Optional[TransactionIndicator] = None,
-        phrase: Optional[str] = None,
         sort_by: Optional[str] = None,
     ):
-        match_query_args = [{phrase: {"$exists": True}}]
+        local_field = Vendor.get_transaction_foreign_field(phrase)
+        collection = Vendor.get_collection(phrase)
+
+        match_query_args = [{local_field: {"$exists": True}}]
         match_query_args.append(self._add_query_range({}, start_date, end_date))
         if indicator:
             match_query_args.append(self._add_indicator_to_query({}, indicator))
@@ -63,8 +67,8 @@ class TransactionService:
                 {"$match": {"$and": match_query_args}},
                 {
                     "$lookup": {
-                        "from": phrase,
-                        "localField": phrase,
+                        "from": collection,
+                        "localField": local_field,
                         "foreignField": "_id",
                         "as": "special",
                     }
@@ -128,8 +132,13 @@ class TransactionService:
             set.pop("Notes")
         return self.db.update_one({"_id": id}, {"$set": set})
 
-    def _add_phrase_to_query(self, query: dict, phrase: str):
-        query["Narration"] = {"$regex": phrase, "$options": "i"}
+    def _add_phrase_to_query(self, query: dict, phrase: Vendor.vendors_type):
+        regex_strings = Vendor.get_narration_regex(phrase)
+        if len(regex_strings) > 1:
+            regex_phrase = "|".join(regex_strings)
+        else:
+            regex_phrase = regex_strings[0]
+        query["Narration"] = {"$regex": regex_phrase, "$options": "i"}
         return query
 
     @staticmethod

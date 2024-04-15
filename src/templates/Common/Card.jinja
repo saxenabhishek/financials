@@ -1,4 +1,4 @@
-{#def item, heading, indicatorHeader, indicatorColors, txnNumber ,priceHeader#}
+{#def item, heading, indicatorHeader, txnNumber ,priceHeader#}
 
 <section class="bg-white rounded-lg shadow-md p-4 col-span-1 mb-2 relative">
   <h2 class="text-lg font-semibold mb-4 truncate">{{ item[heading] }}</h2>
@@ -114,9 +114,7 @@
       {% elif indicatorHeader in key %}
       <!-- Indicator -->
       <span
-        class="inline-block rounded-full px-3 py-1 text-sm font-semibold {{
-          indicatorColors[value]
-        }} mr-2"
+        class="inline-block rounded-full px-3 py-1 mr-2 text-sm font-semibold {% if value == 'Settled' %} bg-green-200 text-green-700 {% elif value == 'Needs Split' %} bg-yellow-200 text-yellow-700 {% elif value == 'Pending' %} bg-blue-200 text-blue-700 {% else %} bg-gray-200 text-gray-700 {% endif %}"
         >{{ value }}</span
       >
       {% elif 'Date' in key %} {{ value | date }}

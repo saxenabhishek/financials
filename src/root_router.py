@@ -249,10 +249,12 @@ async def dashboard(request: Request, month: Optional[int] = None):
 
 def get_all_unread_transaction_files() -> list[str]:
     zomato_files = get_all_file_paths("zomato_orders", ".json")
+    zepto_file = get_all_file_paths("zepto_orders", ".json")
     all_files = (
         get_all_file_paths(r"bank_transactions\hdfc_data")
         + get_all_file_paths(r"bank_transactions\icici_data")
         + zomato_files
+        + zepto_file
     )
     return [file for file in all_files if "old" not in file]
 

@@ -1,5 +1,8 @@
 import pandas as pd
 import re
+from src.utils import get_logger
+
+log = get_logger(__name__)
 
 
 class OrderParser:
@@ -9,6 +12,7 @@ class OrderParser:
         self.json_data_list = json_data_list
         if len(self.json_data_list) == 0:
             self.invalid_init = True
+        log.info(f"total json data files: {len(json_data_list)}")
 
     def _extract_dishes(self, dish_string):
         dishes = []

@@ -1,4 +1,8 @@
 from typing import Literal, List, Dict
+from src.db import mongo
+from src.vendors.zepto.order_parser import OrderParser as ZeptoOrderParser
+from src.vendors.zomato.order_parser import OrderParser as ZomatoOrderParser
+from pymongo import collection
 
 
 class Vendor:
@@ -10,8 +14,21 @@ class Vendor:
 
     # TODO: make this a consistent pydantic model
     vendor_data: Dict[vendors_type, dict] = {
-        "zomato": {"regex": ["zomato"], "field": "zomato", "collection": "zomato"},
-        "zepto": {"regex": ["zepto"], "field": "zepto", "collection": "zepto"},
+        "zomato": {
+            "regex": ["zomato"],
+            "field": "zomato",
+            "collection": "zomato",
+            "folder": "zomato_orders",
+            "parser": ZomatoOrderParser
+        },
+        "zepto": {
+            "regex": ["zepto"],
+            "field": "zepto",
+            "collection": "zepto",
+            "folder": "zepto_orders",
+            "parser": ZeptoOrderParser
+
+        },
     }
 
     @classmethod
@@ -23,5 +40,13 @@ class Vendor:
         return cls.vendor_data[phrase]["field"]
 
     @classmethod
-    def get_collection(cls, phrase: vendors_type) -> str:
-        return cls.vendor_data[phrase]["collection"]
+    def get_collection(cls, phrase: vendors_type) -> collection.Collection:
+        return mongo[cls.vendor_data[phrase]["collection"]]
+
+    @classmethod
+    def get_data_folder(cls, phrase: vendors_type):
+        return cls.vendor_data[phrase]["folder"]
+
+    @classmethod
+    def get_parser(cls, phrase: vendors_type):
+        return cls.vendor_data[phrase]["parser"]

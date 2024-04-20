@@ -67,7 +67,7 @@ class TransactionService:
                 {"$match": {"$and": match_query_args}},
                 {
                     "$lookup": {
-                        "from": collection,
+                        "from": collection.name,
                         "localField": local_field,
                         "foreignField": "_id",
                         "as": "special",

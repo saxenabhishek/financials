@@ -1,13 +1,18 @@
+import os
+from datetime import timedelta
+
+import pandas as pd
+from pymongo.results import InsertManyResult
+
 from src.bank_parser.hdfc_parser import HdfcExcelDataReader
 from src.bank_parser.icici_parser import IciciExcelDataReader
-from src.vendors.zomato.order_parser import OrderParser as ZomatoOrderParser
-from src.utils import get_logger, get_all_file_paths, read_json_files_from_folder
-import pandas as pd
-from src.service.const import TransactionIndicator, Category
 from src.db import mongo
-import os
-from pymongo.results import InsertManyResult
-from datetime import timedelta
+from src.service.const import Category, TransactionIndicator
+from src.utils import get_all_file_paths, get_logger, read_json_files_from_folder
+from src.vendors.zepto.order_parser import OrderParser as ZeptoOrderParser
+from src.vendors.zomato.order_parser import OrderParser as ZomatoOrderParser
+
+from src.service.vendor import Vendor
 
 log = get_logger(__name__)
 
@@ -15,19 +20,27 @@ log = get_logger(__name__)
 class DataIngestionService:
     def __init__(self):
         log.info("Initializing Data Reader and writer Objects")
+
         self.hdfc_files = get_all_file_paths(r"bank_transactions\hdfc_data", ".xls")
         self.icici_files = get_all_file_paths(r"bank_transactions\icici_data", ".xls")
-        self.zomato_files = get_all_file_paths(r"zomato_orders", ".json")
+
+        self.zomato_files = get_all_file_paths(
+            Vendor.get_data_folder("zomato"), ".json"
+        )
+        self.zepto_files = get_all_file_paths(Vendor.get_data_folder("zepto"), ".json")
 
         self.hdfc_parser = HdfcExcelDataReader(self.hdfc_files)
         self.icici_parser = IciciExcelDataReader(self.icici_files)
 
         self.zomato_parser = ZomatoOrderParser(
-            read_json_files_from_folder("zomato_orders")
+            read_json_files_from_folder(Vendor.get_data_folder("zomato"))
+        )
+
+        self.zepto_parser = ZeptoOrderParser(
+            read_json_files_from_folder(Vendor.get_data_folder("zepto"))
         )
 
         self.transactions = mongo["transactions"]
-        self.zomato_collection = mongo["zomato"]
 
     def ingest_parsed_data(self, parser, bank_name, toCSV=False):
         # Check if parser is valid
@@ -85,24 +98,30 @@ class DataIngestionService:
 
         return (
             len(transaction_result.inserted_ids)
-            + len(vendor_result.inserted_ids)
+            + vendor_result
             + modified_documents
             + moved_files
         )
 
     def map_transactions_to_vendors(self) -> int:
         log.info("Mapping transactions to vendor data")
-        modified_count = self.find_vendor_matches_update_db(
+        modified_count = 0
+        modified_count += self.find_vendor_matches_update_db(
             "zomato",
-            self.zomato_collection,
             {
                 "status": 6,
+            },
+        )
+        modified_count += self.find_vendor_matches_update_db(
+            "zepto",
+            {
+                "status": "DELIVERED",
             },
         )
         return modified_count
 
     def find_vendor_matches_update_db(
-        self, vendor_phrase, vendor_collection, additional_filters={}
+        self, vendor_phrase: Vendor.vendors_type, additional_filters={}
     ) -> int:
         """
         This function finds matching transactions and updates the database accordingly.
@@ -117,10 +136,16 @@ class DataIngestionService:
         """
 
         # Find transactions that match the vendor phrase
+
+        field = Vendor.get_transaction_foreign_field(vendor_phrase)
+
         matching_transactions = self.transactions.find(
             {
-                "Narration": {"$regex": vendor_phrase, "$options": "i"},
-                vendor_phrase: {"$exists": False},
+                "Narration": {
+                    "$regex": Vendor.get_narration_regex(vendor_phrase)[0],
+                    "$options": "i",
+                },
+                field: {"$exists": False},
             }
         )
 
@@ -128,30 +153,28 @@ class DataIngestionService:
         for txn in matching_transactions:
             value_date = txn.get("ValueDate")
             next_date = value_date + timedelta(days=1)
-            gtlsdate = {"$gte": value_date, "$lt": next_date}
+            gtltdate = {"$gte": value_date, "$lt": next_date}
 
             # Find matches in the vendor collection
-            matches = vendor_collection.find(
+            matches = Vendor.get_collection(vendor_phrase).find(
                 {
                     "totalCost": txn.get("WithdrawalAmt"),
-                    "orderDate": gtlsdate,
+                    "orderDate": gtltdate,
                     **additional_filters,
                 }
             )
 
-            n = 0
             matched_ids = []
             for match in matches:
-                n += 1
                 matched_ids.append(match.get("_id"))
 
             # If there is exactly one match, update the transaction
-            if n == 1:
+            if len(matched_ids) == 1:
                 res = self.transactions.update_one(
-                    {"_id": txn.get("_id")}, {"$set": {vendor_phrase: matched_ids[0]}}
+                    {"_id": txn.get("_id")}, {"$set": {field: matched_ids[0]}}
                 )
                 result += res.modified_count
-            elif n > 1:
+            elif len(matched_ids) > 1:
                 # If there are multiple matches, log a warning and do not update the transaction
                 log.warn(
                     f"Multiple matches found for transaction: {txn.get('_id')}, not updating. Matches: {matched_ids}"
@@ -161,34 +184,51 @@ class DataIngestionService:
 
         return result
 
-    def ingest_vendor_data(self, toCSV=False, debug=False) -> InsertManyResult:
-        log.info("Ingesting data from Vendor JSON files...")
+    def insert_vendor(self, vendor_phrase) -> InsertManyResult:
+        toCSV = False
 
-        log.debug("Zomato Data Ingestion")
+        self.parser = Vendor.get_parser(vendor_phrase)(
+            read_json_files_from_folder(Vendor.get_data_folder(vendor_phrase))
+        )
 
-        zomato_df = self.ingest_parsed_data(self.zomato_parser, "zomato", toCSV)
+        df = self.ingest_parsed_data(self.parser, vendor_phrase, toCSV)
 
-        # this is a simplification since diff vendors would be in diff collections
-        if zomato_df.empty:
-            log.warn("No valid vendor file paths were provided.")
-            return InsertManyResult(acknowledged=False, inserted_ids=[])
+        if df.empty:
+            log.warn(f"No valid {vendor_phrase} file paths were provided.")
+            return InsertManyResult(acknowledged=True, inserted_ids=[])
 
-        records = zomato_df.to_dict(orient="records")
+        records = df.to_dict(orient="records")
 
         result = InsertManyResult(acknowledged=True, inserted_ids=[])
         try:
-            result = self.zomato_collection.insert_many(records, ordered=False)
+            result = Vendor.get_collection(vendor_phrase).insert_many(
+                records, ordered=False
+            )
         except Exception as e:
             log.warn(f"Error inserting records: {e}")
 
         return result
+
+    def ingest_vendor_data(self, toCSV=False, debug=False) -> int:
+        log.info("Ingesting data from Vendor JSON files...")
+
+        records_inserted = 0
+        for vendor_phrase in ["zomato", "zepto"]:
+            log.debug(f"Inserting vendor {vendor_phrase}")
+            result = self.insert_vendor(vendor_phrase)
+            records_inserted += len(result.inserted_ids)
+
+        return records_inserted
 
     def move_processed_files_to_old(self) -> int:
         log.info("renaming processed files...")
 
         valid_files = [
             file
-            for file in self.hdfc_files + self.icici_files + self.zomato_files
+            for file in self.hdfc_files
+            + self.icici_files
+            + self.zomato_files
+            + self.zepto_files
             if "old" not in file
         ]
 

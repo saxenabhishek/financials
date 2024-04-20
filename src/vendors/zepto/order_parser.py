@@ -5,53 +5,51 @@ log = get_logger(__name__)
 
 
 class OrderParser:
-    def __init__(self, json_data_list):
+    invalid_init = False
+
+    def __init__(self, json_data_list: list[dict]):
         self.json_data_list = json_data_list
+        if len(self.json_data_list) == 0:
+            self.invalid_init = True
         log.info(f"total json data files: {len(json_data_list)}")
 
     def _parse_orders(self):
         orders = []
-        items = []
-
         for json_data in self.json_data_list:
             for order_data in json_data.get("orders", []):
                 order = {
-                    "orderId": order_data["id"],
+                    "_id": order_data["id"],
                     "totalCost": order_data["grandTotalAmount"],
                     "orderDate": order_data["placedTime"],
                     "status": order_data["status"],
                     "paymentStatus": order_data["paymentStatus"],
                     "itemQuantity": order_data["itemQuantityCount"],
+                    "deliveryTimeSec": order_data["totalDeliveryTimeInSeconds"],
                 }
+                order["items"] = [
+                    {"name": product["name"], "quantity": product["count"]}
+                    for product in order_data.get("productsNamesAndCounts", [])
+                ]
                 orders.append(order)
 
-                for product in order_data.get("productsNamesAndCounts", []):
-                    dish = {
-                        "orderId": order_data["id"],
-                        "dishName": product["name"],
-                        "quantity": product["count"],
-                    }
-                    items.append(dish)
+        return orders
 
-        return orders, items
+    def read_data(self):
+        if self.invalid_init:
+            raise ValueError("No valid file paths were provided.")
 
-    def create_dataframe(self):
-        orders_data, items_data = self._parse_orders()
+        orders_data = self._parse_orders()
 
         orders_df = pd.DataFrame(orders_data)
-        dishes_df = pd.DataFrame(items_data)
 
+        orders_df["_id"] = orders_df["_id"].astype(str)
         # Convert orderDate to datetime
         orders_df["orderDate"] = pd.to_datetime(orders_df["orderDate"])
 
         # Convert totalCost to numeric and divide by 100
         orders_df["totalCost"] = pd.to_numeric(orders_df["totalCost"]) / 100
 
-        # Drop duplicates
-        orders_df.drop_duplicates(inplace=True)
-        dishes_df.drop_duplicates(inplace=True)
-
         # Sort orders_df by orderDate
         orders_df = orders_df.sort_values(by="orderDate")
 
-        return orders_df, dishes_df
+        return orders_df

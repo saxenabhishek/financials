@@ -67,7 +67,7 @@ class OrderParser:
 
         orders_df.drop_duplicates(inplace=True)
 
-        orders_df["dishes"] = orders_df["dishString"].apply(self._extract_dishes)
+        orders_df["items"] = orders_df["dishString"].apply(self._extract_dishes)
 
         orders_df.sort_values(by="orderDate", inplace=True)
         return orders_df

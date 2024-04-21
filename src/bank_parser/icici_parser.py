@@ -101,7 +101,7 @@ class IciciExcelDataReader:
         for index, row in all_data.iterrows():
             if index > start_row and row.str.contains("Legends").any():
                 # End at the row before the stars row after the table
-                return index - 2
+                return index - 1
         return None
 
     def _convert_to_datetime(self, df, columns):

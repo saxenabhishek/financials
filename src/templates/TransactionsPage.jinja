@@ -1,5 +1,5 @@
 {#def name, months, tags, data, indicatorHeader, heading, selected_month,
-vendors, selected_vendor, priceHeader#}
+vendors, selected_vendor, priceHeader, isMapped#}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -17,6 +17,7 @@ vendors, selected_vendor, priceHeader#}
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/static/cards.js" defer></script>
+    <script src="/static/toggle.js" defer></script>
   </head>
   <body class="bg-gray-100 container mx-auto px-4 relative">
     <header>
@@ -51,6 +52,8 @@ vendors, selected_vendor, priceHeader#}
       <!-- Info Tags bar -->
       <!-- prettier-ignore -->
       <Common.TagBar tags={ tags } />
+      <!-- prettier-ignore -->
+      <Common.Toggle label="Map Data"  checked={ isMapped }/>
     </header>
     <!-- Cards -->
     <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

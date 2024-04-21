@@ -13,9 +13,8 @@
     <!-- Add hidden input fields for additional data -->
     <input type="hidden" name="id" value="{{ item['_id'] }}" />
     <div class="mb-4">
-      <label for="text_input" class="block text-gray-700">Notes:</label>
-      <input type="text" id="notes" placeholder="Enter your notes here..."
-      value="{{ item.get("Notes", "") }}" class="w-full px-3 py-2 border
+      <label for="notes" class="block text-gray-700">Notes:</label>
+      <input type="text" id="notes" placeholder="Enter your notes here..." name="notes" class="w-full px-3 py-2 border
       border-gray-300 rounded focus:outline-none focus:border-indigo-500" />
     </div>
     <div class="flex justify-between">
@@ -72,6 +71,28 @@
         <li class="text-gray-500">
           &nbsp;{{ sub_key | titleCase }}:
           <span class="text-black"> {{ sub_value }} </span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% elif value.__class__.__name__ == 'list' %}
+      <ul>
+        {% for history_entry in value %}
+        <li class="border-y p-2">
+          <span class="text-gray-500 text-sm">
+            {{ history_entry.timestamp | date }}
+          </span>
+
+          <span
+            class="inline-block rounded-full px-2 py-1 text-xs font-medium {% if history_entry.new_indicator == 'Settled' %} bg-green-200 text-green-700 {% elif history_entry.new_indicator == 'Needs Split' %} bg-yellow-200 text-yellow-700 {% elif history_entry.new_indicator == 'Pending' %} bg-blue-200 text-blue-700 {% else %} bg-gray-200 text-gray-700 {% endif %}"
+          >
+            {{ history_entry.new_indicator }}
+          </span>
+          <br />
+          {% if history_entry.previous_indicator %}
+          <span class="text-gray-500 text-xs">
+            (from: {{ history_entry.previous_indicator }})</span
+          >
+          {% endif %}
         </li>
         {% endfor %}
       </ul>

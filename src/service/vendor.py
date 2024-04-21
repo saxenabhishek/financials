@@ -7,10 +7,12 @@ from pymongo import collection
 
 class Vendor:
 
-    vendor_list = ["zomato", "zepto"]
+    vendor_list = ["zomato", "zepto", "blinkit", "eatSure", "starbucks", "compass"]
 
     # TODO: read values from vendor_list not sure if it is possible to
-    vendors_type = Literal["zomato", "zepto"]
+    vendors_type = Literal[
+        "zomato", "zepto", "blinkit", "eatSure", "starbucks", "compass"
+    ]
 
     # TODO: make this a consistent pydantic model
     vendor_data: Dict[vendors_type, dict] = {
@@ -19,15 +21,42 @@ class Vendor:
             "field": "zomato",
             "collection": "zomato",
             "folder": "zomato_orders",
-            "parser": ZomatoOrderParser
+            "parser": ZomatoOrderParser,
         },
         "zepto": {
             "regex": ["zepto"],
             "field": "zepto",
             "collection": "zepto",
             "folder": "zepto_orders",
-            "parser": ZeptoOrderParser
-
+            "parser": ZeptoOrderParser,
+        },
+        "blinkit": {
+            "regex": ["blin", "grofer"],
+            "field": "blinkit",
+            "collection": "blinkit",
+            "folder": "blinkit_orders",
+            "parser": lambda x: x,
+        },
+        "eatSure": {
+            "regex": ["rebel"],
+            "field": "eatSure",
+            "collection": "eatSure",
+            "folder": "eatsure_orders",
+            "parser": lambda x: x,
+        },
+        "starbucks": {
+            "regex": ["starb"],
+            "field": "starbucks",
+            "collection": None,
+            "folder": "",
+            "parser": None,
+        },
+        "compass": {
+            "regex": ["compa", "33345433"],
+            "field": "compass",
+            "collection": None,
+            "folder": "",
+            "parser": None,
         },
     }
 

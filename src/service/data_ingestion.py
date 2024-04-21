@@ -1,5 +1,5 @@
 import os
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 import pandas as pd
 from pymongo.results import InsertManyResult
@@ -153,7 +153,8 @@ class DataIngestionService:
         for txn in matching_transactions:
             value_date = txn.get("ValueDate")
             next_date = value_date + timedelta(days=1)
-            gtltdate = {"$gte": value_date, "$lt": next_date}
+            prior_date = value_date - timedelta(days=1)
+            gtltdate = {"$gte": prior_date, "$lt": next_date}
 
             # Find matches in the vendor collection
             matches = Vendor.get_collection(vendor_phrase).find(

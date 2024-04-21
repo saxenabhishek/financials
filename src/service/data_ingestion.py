@@ -221,7 +221,7 @@ class DataIngestionService:
         return records_inserted
 
     def move_processed_files_to_old(self) -> int:
-        log.info("renaming processed files...")
+        log.info("renaming processed files with current date...")
 
         valid_files = [
             file
@@ -240,5 +240,7 @@ class DataIngestionService:
             old_dir = os.path.join(parent_dir, ".old")
 
             os.makedirs(old_dir, exist_ok=True)
-            os.rename(file, os.path.join(old_dir, os.path.basename(file)))
+            current_date = datetime.now().strftime("%Y%m%d")
+            new_file_name = f"{current_date}_{os.path.basename(file)}"
+            os.rename(file, os.path.join(old_dir, new_file_name))
         return len(valid_files)

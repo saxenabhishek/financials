@@ -69,6 +69,7 @@ async def render_cards_template(
     month: Optional[int] = None,
     indicator: Optional[TransactionIndicator] = None,
     phrase: Optional[Vendor.vendors_type] = None,
+    isMapped: bool = False,
 ):
     st = time.time_ns()
     tags = []
@@ -97,7 +98,7 @@ async def render_cards_template(
             end_date=end_date,
             indicator=indicator,
             phrase=phrase,
-            combine_with_vendor_data=False,
+            combine_with_vendor_data=isMapped,
             sort_by="ValueDate",
         )
     )
@@ -147,6 +148,7 @@ async def render_cards_template(
         selected_vendor=phrase,
         vendors=display_vendors,
         data=transactions_data,
+        isMapped=isMapped,
     )
 
 

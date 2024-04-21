@@ -58,7 +58,7 @@ async def call_server(
 ):
     log.info(f"Received orderId: {id} notes: {notes} type: {type}")
     txnSrv = TransactionService()
-    res = txnSrv.update_transaction(id, notes, type)
+    res = txnSrv.update_transaction(id, type, notes)
     log.debug(res)
     return {"orderId": id, "notes": notes, "type": type}
 

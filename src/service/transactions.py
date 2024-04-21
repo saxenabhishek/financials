@@ -126,11 +126,56 @@ class TransactionService:
         query["TransactionIndicator"] = indicator.value
         return query
 
-    def update_transaction(self, id: str, notes: str, type: TransactionIndicator):
-        set = {"Notes": notes, "TransactionIndicator": type.value}
-        if notes is None:
-            set.pop("Notes")
-        return self.db.update_one({"_id": id}, {"$set": set})
+    def update_transaction(
+        self,
+        transaction_id: str,
+        new_indicator: TransactionIndicator,
+        notes: str,
+    ):
+        """
+        Updates a transaction in the database and records the indicator change with a timestamp in the history field.
+
+        Args:
+            transaction_id (str): The unique identifier of the transaction.
+            notes (str, optional): Optional notes to update. Defaults to None.
+            new_indicator (TransactionIndicator): The new transaction indicator.
+
+        Returns:
+            pymongo.results.UpdateResult: The result of the update operation.
+        """
+
+        update_data = {}
+        if notes is not None:
+            update_data["Notes"] = notes
+        update_data["TransactionIndicator"] = new_indicator.value
+
+        # Get the previous indicator value (if available)
+        previous_indicator = self.db.find_one(
+            {"_id": transaction_id}, projection={"TransactionIndicator": 1}
+        )
+        previous_indicator = (
+            previous_indicator.get("TransactionIndicator")
+            if previous_indicator
+            else None
+        )
+
+        # Create a history entry with previous and new indicator values
+        history_entry = {
+            "timestamp": datetime.now(),
+            "previous_indicator": previous_indicator,
+            "new_indicator": new_indicator.value,
+        }
+
+        # Update the transaction and add/update the history field
+        update_result = self.db.update_one(
+            {"_id": transaction_id},
+            {
+                "$set": update_data,
+                "$addToSet": {"History": history_entry},
+            },
+        )
+
+        return update_result
 
     def _add_phrase_to_query(self, query: dict, phrase: Vendor.vendors_type):
         regex_strings = Vendor.get_narration_regex(phrase)

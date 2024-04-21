@@ -39,65 +39,9 @@
 
   <!-- Speical data if there -->
   {% if item.get("special", False) %}
-  <div class="mt-4 bg-emerald-50 rounded-md p-4">
-    <div class="flex flex-row justify-between">
-      <div>
-        <!-- Restaurant Name -->
-        <h3 class="text-lg font-semibold text-emerald-800">
-          {{ item.special.get("restaurantName", "Name") }}
-        </h3>
-        <!-- Total Cost -->
-        <p class="text-green-500 font-medium">
-          {{ item.special.totalCost | currency }}
-        </p>
-        <!-- Order Date -->
-        <p class="text-sm">
-          {{ item.special.orderDate | date }}
-        </p>
-      </div>
-      <!-- Restaurant Thumbnail -->
-      <img src="{{
-        item.special.get(
-          "restaurantThumb",
-          "https://cdn.zeptonow.com/web-static-assets-prod/artifacts/10.6.1/favicon.png"
-        )
-      }}" alt="Restaurant Thumbnail" class="h-16 rounded-md ml-1 object-cover
-      ring-1 ring-green-500" />
-    </div>
 
-    <!-- Display Dishes as a table -->
-    <div class="my-2 bg-green-200 rounded-lg p-4 text-pretty">
-      <table class="w-full text-emerald-900">
-        <tbody>
-          {% for dish in item.special.get("items") %}
-          <tr>
-            <td class="px-4 py-2 border-y border-y-emerald-500">
-              {{ dish.quantity }}
-            </td>
-            <td class="px-4 py-2 border-y border-y-emerald-500">
-              {{ dish.name }}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Other fields -->
-    <ul>
-      <!-- The fields included here are for zomato specifically, remove them when dealing with new vendors -->
-      {% for key, value in item.special.items() %} {% if key not in
-      ['restaurantName', 'restaurantThumb', '_id', 'items', 'totalCost',
-      'orderDate'] %}
-      <li class="text-gray-700 overflow-hidden">
-        <span class="font-extralight text-blue-900"
-          >{{ key | titleCase }}:</span
-        >
-        <span class="truncate" title="{{ value }}">{{ value }}</span>
-      </li>
-      {% endif %} {% endfor %}
-    </ul>
-  </div>
+  <!-- prettier-ignore -->
+  <Common.OrderCard item={ item } />
   {% endif %}
 
   <!-- Transaction Fields -->

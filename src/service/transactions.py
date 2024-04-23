@@ -178,11 +178,7 @@ class TransactionService:
         return update_result
 
     def _add_phrase_to_query(self, query: dict, phrase: Vendor.vendors_type):
-        regex_strings = Vendor.get_narration_regex(phrase)
-        if len(regex_strings) > 1:
-            regex_phrase = "|".join(regex_strings)
-        else:
-            regex_phrase = regex_strings[0]
+        regex_phrase = Vendor.get_narration_regex(phrase)
         query["Narration"] = {"$regex": regex_phrase, "$options": "i"}
         return query
 

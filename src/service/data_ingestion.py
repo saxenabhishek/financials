@@ -9,10 +9,10 @@ from src.bank_parser.icici_parser import IciciExcelDataReader
 from src.db import mongo
 from src.service.const import Category, TransactionIndicator
 from src.utils import get_all_file_paths, get_logger, read_json_files_from_folder
-from src.vendors.zepto.order_parser import OrderParser as ZeptoOrderParser
-from src.vendors.zomato.order_parser import OrderParser as ZomatoOrderParser
 
 from src.service.vendor import Vendor
+
+from typing import List
 
 log = get_logger(__name__)
 
@@ -28,17 +28,12 @@ class DataIngestionService:
             Vendor.get_data_folder("zomato"), ".json"
         )
         self.zepto_files = get_all_file_paths(Vendor.get_data_folder("zepto"), ".json")
+        self.eatSure_files = get_all_file_paths(
+            Vendor.get_data_folder("eatSure"), ".json"
+        )
 
         self.hdfc_parser = HdfcExcelDataReader(self.hdfc_files)
         self.icici_parser = IciciExcelDataReader(self.icici_files)
-
-        self.zomato_parser = ZomatoOrderParser(
-            read_json_files_from_folder(Vendor.get_data_folder("zomato"))
-        )
-
-        self.zepto_parser = ZeptoOrderParser(
-            read_json_files_from_folder(Vendor.get_data_folder("zepto"))
-        )
 
         self.transactions = mongo["transactions"]
 
@@ -93,7 +88,9 @@ class DataIngestionService:
         transaction_result = self.ingest_transactions(toCSV, debug)
         vendor_result = self.ingest_vendor_data(toCSV, debug)
 
-        moved_files = self.move_processed_files_to_old()
+        moved_files = 0
+        if not debug:
+            moved_files = self.move_processed_files_to_old()
         modified_documents = self.map_transactions_to_vendors()
 
         return (
@@ -116,6 +113,12 @@ class DataIngestionService:
             "zepto",
             {
                 "status": "DELIVERED",
+            },
+        )
+        modified_count += self.find_vendor_matches_update_db(
+            "eatSure",
+            {
+                "status": "delivered",
             },
         )
         return modified_count
@@ -142,7 +145,7 @@ class DataIngestionService:
         matching_transactions = self.transactions.find(
             {
                 "Narration": {
-                    "$regex": Vendor.get_narration_regex(vendor_phrase)[0],
+                    "$regex": Vendor.get_narration_regex(vendor_phrase),
                     "$options": "i",
                 },
                 field: {"$exists": False},
@@ -214,7 +217,8 @@ class DataIngestionService:
         log.info("Ingesting data from Vendor JSON files...")
 
         records_inserted = 0
-        for vendor_phrase in ["zomato", "zepto"]:
+        vendor_phrases: List[Vendor.vendors_type] = ["zomato", "zepto", "eatSure"]
+        for vendor_phrase in vendor_phrases:
             log.debug(f"Inserting vendor {vendor_phrase}")
             result = self.insert_vendor(vendor_phrase)
             records_inserted += len(result.inserted_ids)
@@ -230,6 +234,7 @@ class DataIngestionService:
             + self.icici_files
             + self.zomato_files
             + self.zepto_files
+            + self.eatSure_files
             if "old" not in file
         ]
 

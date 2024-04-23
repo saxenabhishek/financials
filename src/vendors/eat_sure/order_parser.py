@@ -21,6 +21,9 @@ class EatSureOrderParser(Parser):
         details["totalAmount"] = order_data["total_amount"]
         details["deliveryCharges"] = order_data["delivery_charges"]
         details["packagingCharges"] = order_data["packaging_charges"]
+        details["restaurantThumb"] = order_data["brands"][0]["brand_logo"]
+        details["restaurantName"] = order_data["brands"][0]["brand_name"]
+        details["deliveryAddress"] = order_data["location"]["society_name"]
 
         # Extract payment method and status
         if "payment_status" in order_data:
@@ -40,33 +43,32 @@ class EatSureOrderParser(Parser):
             details.update(payment_mode_details)
 
         # Extract store details
-        if order_data["products"]:
-            products = []
-            log.debug(
-                "has Product: %s %s", order_data["order_id"], order_data["products"]
-            )
-            for product in order_data["products"]:
-                product_details = {
-                    "name": product["name"],
-                    "quantity": product["quantity"],
-                    "price": product["price"],
-                }
-                products.append(product_details)
-            details["products"] = products
-            details["isCombo"] = False
-        elif order_data["brands"]:
-            log.debug("has Brands: %s %s", order_data["order_id"], order_data["brands"])
-            for brand in order_data["brands"]:
-                combo_details_list = []
+        items = []
+        for brand in order_data["brands"]:
+            if brand["products"]:
+                for product in brand["products"]:
+                    log.debug(f"id : {order_data['order_id']}")
+                    price = (
+                        product["price_with_tax_customization"]
+                        if "price_with_tax_customization" in product
+                        else 0  # assuming it is an accompanying product with no price
+                    )
+                    product_details = {
+                        "name": product["name"],
+                        "quantity": product["quantity"],
+                        "price": price,
+                    }
+                    log.debug(product_details)
+                    items.append(product_details)
+            if brand["combo"]:
                 for combo_item in brand["combo"]:
                     combo_details = {
                         "name": combo_item["name"],
                         "quantity": combo_item["quantity"],
                         "price": combo_item["price_with_tax"],
                     }
-                    combo_details_list.append(combo_details)
-            details["products"] = combo_details_list
-            details["isCombo"] = True
+                    items.append(combo_details)
+        details["items"] = items
         return details
 
     def _parse_orders(self) -> List[dict]:
@@ -84,7 +86,7 @@ class EatSureOrderParser(Parser):
 
         df["orderDate"] = pd.to_datetime(df["orderDate"])
 
-        cols_to_convert = ['totalCost', 'totalAmount', 'deliveryCharges']
+        cols_to_convert = ["totalCost", "totalAmount", "deliveryCharges"]
         df[cols_to_convert] = df[cols_to_convert].apply(pd.to_numeric)
 
         df.sort_values("orderDate", inplace=True)

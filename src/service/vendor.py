@@ -1,7 +1,9 @@
 from typing import Literal, List, Dict
 from src.db import mongo
-from src.vendors.zepto.order_parser import OrderParser as ZeptoOrderParser
+from src.vendors.zepto.order_parser import ZeptoOrderParser as ZeptoOrderParser
 from src.vendors.zomato.order_parser import OrderParser as ZomatoOrderParser
+from src.vendors.eat_sure import EatSureOrderParser
+
 from pymongo import collection
 
 
@@ -38,11 +40,11 @@ class Vendor:
             "parser": lambda x: x,
         },
         "eatSure": {
-            "regex": ["rebel"],
+            "regex": ["rebel", "59724445"],
             "field": "eatSure",
             "collection": "eatSure",
-            "folder": "eatsure_orders",
-            "parser": lambda x: x,
+            "folder": "eat_sure_orders",
+            "parser": EatSureOrderParser,
         },
         "starbucks": {
             "regex": ["starb"],
@@ -61,8 +63,13 @@ class Vendor:
     }
 
     @classmethod
-    def get_narration_regex(cls, phrase: vendors_type) -> List[str]:
-        return cls.vendor_data[phrase]["regex"]
+    def get_narration_regex(cls, phrase: vendors_type) -> str:
+        regex_strings = cls.vendor_data[phrase]["regex"]
+        if len(regex_strings) > 1:
+            regex_phrase = "|".join(regex_strings)
+        else:
+            regex_phrase = regex_strings[0]
+        return regex_phrase
 
     @classmethod
     def get_transaction_foreign_field(cls, phrase: vendors_type) -> str:

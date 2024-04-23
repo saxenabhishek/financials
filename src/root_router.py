@@ -28,7 +28,7 @@ jinja_env = Environment(loader=FileSystemLoader("src/templates"))
 custom_filters = {}
 custom_filters["titleCase"] = convert_camel_to_title
 custom_filters["date"] = pipe_human_readable_date
-custom_filters["currency"] = lambda value: f"₹ {value:,.2f}"
+custom_filters["currency"] = lambda value: f"₹{value:,.2f}"
 
 
 catalog = Catalog()
@@ -252,11 +252,14 @@ async def dashboard(request: Request, month: Optional[int] = None):
 def get_all_unread_transaction_files() -> list[str]:
     zomato_files = get_all_file_paths("zomato_orders", ".json")
     zepto_file = get_all_file_paths("zepto_orders", ".json")
+    eatSure_files = get_all_file_paths(Vendor.get_data_folder("eatSure"), ".json")
+
     all_files = (
         get_all_file_paths(r"bank_transactions\hdfc_data")
         + get_all_file_paths(r"bank_transactions\icici_data")
         + zomato_files
         + zepto_file
+        + eatSure_files
     )
     return [file for file in all_files if "old" not in file]
 

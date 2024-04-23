@@ -1,10 +1,11 @@
 import pandas as pd
 from src.utils import get_logger
+from typing import List
 
 log = get_logger(__name__)
 
 
-class OrderParser:
+class ZeptoOrderParser:
     invalid_init = False
 
     def __init__(self, json_data_list: list[dict]):
@@ -13,7 +14,7 @@ class OrderParser:
             self.invalid_init = True
         log.info(f"total json data files: {len(json_data_list)}")
 
-    def _parse_orders(self):
+    def _parse_orders(self) -> List[dict]:
         orders = []
         for json_data in self.json_data_list:
             for order_data in json_data.get("orders", []):
@@ -34,7 +35,7 @@ class OrderParser:
 
         return orders
 
-    def read_data(self):
+    def read_data(self) -> pd.DataFrame:
         if self.invalid_init:
             raise ValueError("No valid file paths were provided.")
 

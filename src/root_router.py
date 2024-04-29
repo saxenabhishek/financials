@@ -1,7 +1,7 @@
 import datetime
 import time
 from functools import partial
-from typing import Optional
+from typing import Optional, Literal
 
 import pandas as pd
 from fastapi import APIRouter, Form, Request
@@ -69,7 +69,7 @@ async def render_cards_template(
     month: Optional[int] = None,
     indicator: Optional[TransactionIndicator] = None,
     phrase: Optional[Vendor.vendors_type] = None,
-    isMapped: bool = False,
+    Mapped: Optional[Literal["true", "false"]] = "false",
 ):
     st = time.time_ns()
     tags = []
@@ -91,6 +91,8 @@ async def render_cards_template(
         view_cols["special.paymentStatus"] = 0
         view_cols["special.dishString"] = 0
 
+    isChecked = True if Mapped == "true" else False
+
     transactions_data = list(
         txnSrv.get_all_transactions(
             view_cols,
@@ -98,27 +100,28 @@ async def render_cards_template(
             end_date=end_date,
             indicator=indicator,
             phrase=phrase,
-            combine_with_vendor_data=isMapped,
+            combine_with_vendor_data=isChecked,
             sort_by="ValueDate",
         )
     )
 
     months_list = get_months()
-    month_link_gen = partial(
-        generate_next_link, "/cards", indicator=indicator, phrase=phrase
-    )
-
-    vendor_link_gen = partial(
-        generate_next_link, "/cards", indicator=indicator, month=month
-    )
 
     display_months = [
-        dict(link=month_link_gen(month=idx + 1), name=month)
+        dict(
+            name=month,
+            param_name="month",
+            param_value=idx + 1,
+        )
         for idx, month in enumerate(months_list)
     ]
 
     display_vendors = [
-        dict(link=vendor_link_gen(phrase=vendor), name=vendor)
+        dict(
+            name=vendor,
+            param_name="phrase",
+            param_value=vendor,
+        )
         for vendor in Vendor.vendor_list
     ]
 
@@ -148,7 +151,7 @@ async def render_cards_template(
         selected_vendor=phrase,
         vendors=display_vendors,
         data=transactions_data,
-        isMapped=isMapped,
+        isMapped=isChecked,
     )
 
 
@@ -199,10 +202,13 @@ async def dashboard(request: Request, month: Optional[int] = None):
     kpi_link_gen = partial(generate_next_link, "/cards", month=month, phrase=None)
 
     months_list = get_months()
-    month_link_gen = partial(generate_next_link, "/", phrase=None, indicator=None)
 
     display_months = [
-        {"link": month_link_gen(month=idx + 1), "name": month}
+        dict(
+            name=month,
+            param_name="month",
+            param_value=idx + 1,
+        )
         for idx, month in enumerate(months_list)
     ]
 

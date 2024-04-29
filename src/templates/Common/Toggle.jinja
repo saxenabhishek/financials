@@ -1,11 +1,12 @@
 {#def label, checked#}
 
 <label class="relative inline-flex cursor-pointer items-center">
+  <!-- prettier-ignore -->
   <input
     id="switch"
     type="checkbox"
     class="peer sr-only"
-    onchange="toggleQueryParam('isMapped', true)"
+    onchange="toggleQueryParam('Mapped', 'true')"
     {% if checked %} checked {% endif %}
   />
   <label for="switch" class="hidden"> </label>

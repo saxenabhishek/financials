@@ -2,18 +2,13 @@
 <!-- do this please later -->
 <section class="flex items-center space-x-4 my-2 mx-2">
   <span class="text-gray-600">{{ label }}:</span>
-  <a
-    href="{{ no_data_link }}"
-    class="bg-gray-500 hover:bg-gray-700 text-white font-normal py-1 px-4 rounded"
-  >
-    {{ no_data_label }}
-  </a>
   {% for month in options %}
-  <a
-    href="{{ month.link }}"
-    class="bg-emerald-500 hover:bg-emerald-700 text-white font-normal py-1 px-2 rounded {% if month.name == selected_option %}bg-emerald-700 ring ring-emerald-500 {%endif%}"
+  <!-- prettier-ignore -->
+  <button
+  onclick="toggleQueryParam('{{month.param_name}}', '{{month.param_value}}')"
+  class="bg-emerald-500 hover:bg-emerald-700 text-white font-normal py-1 px-2 rounded {% if month.name == selected_option %}bg-emerald-700 ring ring-emerald-500 {%endif%}"
   >
-    {{ month.name | titleCase }}
-  </a>
+  {{ month.name | titleCase }}
+  </button>
   {% endfor %}
 </section>

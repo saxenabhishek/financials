@@ -49,14 +49,14 @@ class Vendor:
         "starbucks": {
             "regex": ["starb"],
             "field": "starbucks",
-            "collection": None,
+            "collection": "starbucks",
             "folder": "",
             "parser": None,
         },
         "compass": {
             "regex": ["compa", "33345433"],
             "field": "compass",
-            "collection": None,
+            "collection": "compass",
             "folder": "",
             "parser": None,
         },

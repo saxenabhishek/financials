@@ -91,6 +91,8 @@ async def render_cards_template(
         view_cols["special.paymentStatus"] = 0
         view_cols["special.dishString"] = 0
 
+    sort_by = "TransactionDate"
+
     isChecked = True if Mapped == "true" else False
 
     transactions_data = list(
@@ -101,7 +103,7 @@ async def render_cards_template(
             indicator=indicator,
             phrase=phrase,
             combine_with_vendor_data=isChecked,
-            sort_by="ValueDate",
+            sort_by=sort_by,
         )
     )
 
@@ -127,7 +129,7 @@ async def render_cards_template(
 
     tags.append(f"{len(transactions_data)} Txns")
     tags.append(f"{round((time.time_ns() - st)*1e-6, 3)}ms")
-    tags.append("Sorted: Value Date")
+    tags.append(f"Sorted: {sort_by}")
     tags.append(
         f"Indicator: {indicator.value}" if indicator is not None else "All Txns"
     )

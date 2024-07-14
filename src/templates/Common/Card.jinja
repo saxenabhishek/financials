@@ -14,8 +14,13 @@
     <input type="hidden" name="id" value="{{ item['_id'] }}" />
     <div class="mb-4">
       <label for="notes" class="block text-gray-700">Notes:</label>
-      <input type="text" id="notes" placeholder="Enter your notes here..." name="notes" class="w-full px-3 py-2 border
-      border-gray-300 rounded focus:outline-none focus:border-indigo-500" />
+      <input
+        type="text"
+        id="notes"
+        placeholder="Enter your notes here..."
+        name="notes"
+        class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-indigo-500"
+      />
     </div>
     <div class="flex justify-between">
       <button
@@ -54,7 +59,10 @@
       <p class="font-extralight text-blue-900">{{ key | titleCase }}:</p>
 
       <!-- Value Formatting -->
-      {% if 'Amt' in key or 'Balance' in key %} {{ value | currency }}
+      {% if 'Amt' in key or 'Balance' in key %}
+      <span>
+        {{ value | currency }}
+      </span>
       <!-- Currency -->
       {% elif indicatorHeader in key %}
       <!-- Indicator -->

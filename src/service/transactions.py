@@ -43,7 +43,7 @@ class TransactionService:
             query = self._add_phrase_to_query(query, phrase)
         transactions = self.db.find(query, cols) if cols else self.db.find(query)
         if sort_by:
-            return transactions.sort(sort_by)
+            return transactions.sort(sort_by, -1)
         return transactions
 
     def get_all_vendor_transactions(

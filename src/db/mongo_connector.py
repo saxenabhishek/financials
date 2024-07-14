@@ -33,6 +33,3 @@ class MongoConnector:
         """
         if self.client:
             self.client.close()
-
-
-

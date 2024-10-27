@@ -166,3 +166,5 @@ cython_debug/
 scraper.py
 
 tailwind.config.js
+
+*.txt

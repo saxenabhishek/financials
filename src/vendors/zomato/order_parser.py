@@ -57,8 +57,9 @@ class OrderParser:
         orders_df = pd.DataFrame(orders_data)
 
         orders_df["_id"] = orders_df["_id"].astype(str)
-        orders_df["totalCost"] = pd.to_numeric(orders_df["totalCost"].str[1:])
-
+        orders_df["totalCost"] = pd.to_numeric(
+            orders_df["totalCost"].str.replace(",", "").str[1:]
+        )
         orders_df["orderDate"] = pd.to_datetime(
             orders_df["orderDate"], format="%B %d, %Y at %I:%M %p"
         )

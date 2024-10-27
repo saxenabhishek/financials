@@ -8,6 +8,19 @@ import datetime
 from typing import Optional
 
 
+# Dump logs in a file
+
+log_file_name = "./logs.txt"
+
+# Create a file handler
+file_handler = logging.FileHandler(log_file_name)
+file_handler.setLevel(logging.DEBUG)
+
+# Create a formatter and add it to the handler
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+file_handler.setFormatter(formatter)
+
+
 def read_json_files_from_folder(folder_path: str) -> list[dict]:
     return [
         read_json_file(file_path)
@@ -90,6 +103,7 @@ def get_logger(name):
 
     # Add console handler to logger
     logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
 
     return logger
 

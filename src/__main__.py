@@ -6,7 +6,6 @@ from src.root_router import router
 
 app = FastAPI()
 log = get_logger(__name__)
-# Mount static files directory (optional)
 app.mount("/static", StaticFiles(directory="src/static"), name="static")
 app.include_router(router)
 

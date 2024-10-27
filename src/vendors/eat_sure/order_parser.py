@@ -58,7 +58,6 @@ class EatSureOrderParser(Parser):
                         "quantity": product["quantity"],
                         "price": price,
                     }
-                    log.debug(product_details)
                     items.append(product_details)
             if brand["combo"]:
                 for combo_item in brand["combo"]:

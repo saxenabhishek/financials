@@ -59,24 +59,41 @@
       <p class="font-extralight text-blue-900">{{ key | titleCase }}:</p>
 
       <!-- Value Formatting -->
-      {% if 'Amt' in key or 'Balance' in key %}
-      <span>
-        {{ value | currency }}
-      </span>
       <!-- Currency -->
-      {% elif indicatorHeader in key %}
+      {% if 'Amt' in key or 'Balance' in key %}
+      <button
+        onclick="navigator.clipboard.writeText({{ value }});"
+        class="hover:text-emerald-400 active:text-emerald-800 flex items-center"
+      >
+        {{ value | currency }}
+        <img src="static/icons8-clipboard-64.png" class="w-5 mx-1" />
+      </button>
+
       <!-- Indicator -->
+      {% elif indicatorHeader in key %}
       <span
         class="inline-block rounded-full px-3 py-1 mr-2 text-sm font-semibold {% if value == 'Settled' %} bg-green-200 text-green-700 {% elif value == 'Needs Split' %} bg-yellow-200 text-yellow-700 {% elif value == 'Pending' %} bg-blue-200 text-blue-700 {% else %} bg-gray-200 text-gray-700 {% endif %}"
         >{{ value }}</span
       >
-      {% elif 'Date' in key %} {{ value | date }}
       <!-- Date -->
-      {% elif value is mapping %}
+      {% elif 'Date' in key %} {{ value | date }}
+
+      {% elif 'zepto' in key %}
+      <a
+        class="underline text-purple-400"
+        href="https://www.zeptonow.com/order/{{ value }}"
+        target="_blank"
+        >{{ value }}</a
+      >
+
+      {% elif 'zomato' in key %}
+      <span class="text-red-500">{{ value }}</span>
+
       <!-- Nested dict -->
+      {% elif value is mapping %}
       <ul>
         {% for sub_key, sub_value in value.items() %}
-        <li class="text-gray-500">
+        <li class="text-gray-400">
           &nbsp;{{ sub_key | titleCase }}:
           <span class="text-black"> {{ sub_value }} </span>
         </li>

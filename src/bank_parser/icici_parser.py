@@ -57,35 +57,18 @@ class IciciExcelDataReader:
             raise Exception(f"An error occurred while reading the Excel file: {e}")
 
     def _extract_narration_info(self, narration):
-        # Define patterns for different types of transactions (and they may expand)
-        patterns = {
-            "UPI": r"UPI/(\d+)/(.*?)\/([^\/]+)@?\/([^\/]+)",
-            "NEFT": r"NEFT-(.*?)-(.*?)-(.*)",
-            "Interest": r"(\d+):Int\.Pd:(\d{2}-\d{2}-\d{4}) to (\d{2}-\d{2}-\d{4})",
-        }
-
         extracted_info = {}
 
-        # Iterate through patterns and extract information
-        for key, pattern in patterns.items():
-            match = re.search(pattern, narration)
-            if match:
-                extracted_info["type"] = key
-                if key == "UPI":
-                    extracted_info["transaction_id"] = match.group(1)
-                    extracted_info["message"] = match.group(2)
-                    extracted_info["sender_receiver_details"] = match.group(3)
-                    extracted_info["bank_name"] = match.group(4)
-                elif key == "NEFT":
-                    extracted_info["sender_bank"] = match.group(2)
-                    extracted_info["transaction_id"] = match.group(1)
-                    extracted_info["details"] = match.group(3)
-                elif key == "Interest":
-                    extracted_info["transaction_id"] = match.group(1)
-                    extracted_info["start_date"] = match.group(2)
-                    extracted_info["end_date"] = match.group(3)
+        try:
+            extracted_info = self._extract_upi_info(narration)
+        except Exception as e:
+            log.debug(f"Error parsing UPI string: {e}")
+            extracted_info = self._extract_other_transactions(narration)
+
         if len(extracted_info) == 0:
             log.debug(f"No pattern matched for narration: {narration}")
+            extracted_info["transaction_id"] = narration
+
         return extracted_info
 
     def _read_all_data(self, file_path, sheet_name=0):
@@ -185,3 +168,85 @@ class IciciExcelDataReader:
         )
 
         return combined_df
+
+    def _extract_upi_info(self, upi_string: str) -> dict:
+        """
+        Parses an UPI string
+        1. "UPI"
+        1. upi txn number if all digits or UPI id receiver
+        1. "UPI" or transaction Message
+        1. If contains bank then receiver bank id otherwise receiver ID
+        1. if contains bank then bank id otherwise transaction number
+        1. Transaction ID with bank, check for empty strings
+
+        """
+        segments = upi_string.split("/")
+
+        # Check for exactly 6 segments
+        if len(segments) != 6:
+            raise ValueError("Invalid UPI string: Exactly 6 segments required. " + upi_string)
+
+        # Verify that the first segment is "UPI" for sanity check
+        if segments[0] != "UPI":
+            raise ValueError("Invalid UPI string: First segment must be 'UPI'. " + upi_string)
+
+        # Initialize result dictionary
+        result = {}
+
+        # Process each segment based on the specified conditions
+        # Element 1: Check if all digits, add as "transaction_id" or as "receiverID"
+        result["transaction_id" if segments[1].isdigit() else "beneficiary_details"] = (
+            segments[1]
+        )
+
+        # Element 2: If not "UPI", add as "message"
+        if segments[2] != "UPI":
+            result["message"] = segments[2]
+
+        # Element 3: Check for "bank" (case-insensitive) to determine if "receiver bank" or "receiverID"
+        if "bank" in segments[3].lower():
+            result["beneficiary_bank"] = segments[3]
+        else:
+            result["beneficiary_details"] = segments[3]
+
+        # Element 4: Check for "bank" (case-insensitive) to determine if "receiver bank" or "txn number"
+        if "bank" in segments[4].lower():
+            result["beneficiary_bank"] = segments[4]
+        else:
+            result["transaction_id"] = segments[4]
+
+        # Element 5: Add as "bankTxnId" if not empty
+        if segments[5]:
+            result["bank_txn_id"] = segments[5]
+
+        return result
+
+    def _extract_other_transactions(self, narration):
+        # Define patterns for different types of transactions (and they may expand)
+        patterns = {
+            "NEFT": r"NEFT-(.*?)-(.*?)-(.*)",
+            "Interest": r"(\d+):Int\.Pd:(\d{2}-\d{2}-\d{4}) to (\d{2}-\d{2}-\d{4})",
+        }
+
+        extracted_info = {}
+
+        # Iterate through patterns and extract information
+        for key, pattern in patterns.items():
+            match = re.search(pattern, narration)
+            if match:
+                extracted_info["type"] = key
+                if key == "UPI":
+                    extracted_info["transaction_id"] = match.group(1)
+                    extracted_info["message"] = match.group(2)
+                    extracted_info["sender_receiver_details"] = match.group(3)
+                    extracted_info["bank_name"] = match.group(4)
+                elif key == "NEFT":
+                    extracted_info["sender_bank"] = match.group(2)
+                    extracted_info["transaction_id"] = match.group(1)
+                    extracted_info["details"] = match.group(3)
+                elif key == "Interest":
+                    extracted_info["transaction_id"] = match.group(1)
+                    extracted_info["start_date"] = match.group(2)
+                    extracted_info["end_date"] = match.group(3)
+
+        return extracted_info

@@ -9,11 +9,19 @@ from pymongo import collection
 
 class Vendor:
 
-    vendor_list = ["zomato", "zepto", "blinkit", "eatSure", "starbucks", "compass"]
+    vendor_list = [
+        "zomato",
+        "zepto",
+        "blinkit",
+        "eatSure",
+        "swiggy",
+        "starbucks",
+        "compass",
+    ]
 
     # TODO: read values from vendor_list not sure if it is possible to
     vendors_type = Literal[
-        "zomato", "zepto", "blinkit", "eatSure", "starbucks", "compass"
+        "zomato", "zepto", "blinkit", "eatSure", "starbucks", "compass", "swiggy"
     ]
 
     # TODO: make this a consistent pydantic model
@@ -26,7 +34,7 @@ class Vendor:
             "parser": ZomatoOrderParser,
         },
         "zepto": {
-            "regex": ["zepto"],
+            "regex": ["zepto", "66490784@", "geddit"],
             "field": "zepto",
             "collection": "zepto",
             "folder": "zepto_orders",
@@ -54,9 +62,16 @@ class Vendor:
             "parser": None,
         },
         "compass": {
-            "regex": ["compa", "33345433"],
+            "regex": ["compas", "33345433"],
             "field": "compass",
             "collection": "compass",
+            "folder": "",
+            "parser": None,
+        },
+        "swiggy": {
+            "regex": ["swiggy"],
+            "field": "swiggy",
+            "collection": "swiggy",
             "folder": "",
             "parser": None,
         },
